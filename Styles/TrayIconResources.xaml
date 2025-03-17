@@ -1,0 +1,17 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:tb="http://www.hardcodet.net/taskbar">
+
+    <!-- 托盘图标上下文菜单 -->
+    <ContextMenu x:Key="TrayIconContextMenu" x:Shared="false">
+        <MenuItem Header="新建分区" Command="{Binding OpenFeature1Command}"/>
+        <Separator />
+        <MenuItem Header="退出" Command="{Binding ExitCommand}"/>
+    </ContextMenu>
+
+    <!-- 托盘图标 -->
+    <tb:TaskbarIcon x:Key="TrayIcon"
+                   ToolTipText="WPF托盘应用"
+                   ContextMenu="{StaticResource TrayIconContextMenu}"
+                   DoubleClickCommand="{Binding OpenFeature1Command}"/>
+</ResourceDictionary>

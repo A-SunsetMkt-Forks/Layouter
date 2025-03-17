@@ -1,0 +1,19 @@
+<Application x:Class="Layouter.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Layouter"
+             xmlns:converters="clr-namespace:Layouter.Utility">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Styles/TrayIconResources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+            <converters:PointToMarginConverter x:Key="PointToMarginConverter"/>
+            <converters:FilePathToIconConverter x:Key="FilePathToIconConverter"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
