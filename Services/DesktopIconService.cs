@@ -51,7 +51,9 @@ namespace Layouter.Services
             return icons;
         }
 
-        // 刷新桌面，使更改生效
+        /// <summary>
+        /// 刷新桌面
+        /// </summary>
         public void RefreshDesktop()
         {
             try
@@ -95,10 +97,14 @@ namespace Layouter.Services
             }
         }
 
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
 
-        // 创建桌面快捷方式
+
+        /// <summary>
+        /// 创建桌面快捷方式
+        /// </summary>
+        /// <param name="targetPath"></param>
+        /// <param name="shortcutName"></param>
+        /// <returns></returns>
         public bool CreateShortcutOnDesktop(string targetPath, string shortcutName)
         {
             try
@@ -137,7 +143,11 @@ namespace Layouter.Services
             }
         }
 
-        // 根据DesktopIcon对象创建桌面快捷方式
+        /// <summary>
+        /// 根据DesktopIcon对象创建桌面快捷方式
+        /// </summary>
+        /// <param name="icon"></param>
+        /// <returns></returns>
         public bool CreateShortcutOnDesktop(DesktopIcon icon)
         {
             try
@@ -207,7 +217,12 @@ namespace Layouter.Services
             }
         }
 
-        // 复制文件到桌面
+        /// <summary>
+        /// 复制文件到桌面
+        /// </summary>
+        /// <param name="sourceFilePath"></param>
+        /// <param name="newFileName"></param>
+        /// <returns></returns>
         public bool CopyFileToDesktop(string sourceFilePath, string newFileName = null)
         {
             try
@@ -255,7 +270,11 @@ namespace Layouter.Services
             }
         }
 
-        // 从分区拖回到桌面
+        /// <summary>
+        /// 从分区拖回到桌面
+        /// </summary>
+        /// <param name="icon"></param>
+        /// <returns></returns>
         public bool RestoreIconToDesktop(DesktopIcon icon)
         {
             try
@@ -309,7 +328,11 @@ namespace Layouter.Services
             }
         }
 
-        // 隐藏桌面上的文件图标 - 使用增强版隐藏方法
+        /// <summary>
+        /// 隐藏桌面上的文件图标 - 使用增强版隐藏方法
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
         public bool HideDesktopIcon(string filePath)
         {
             try
@@ -322,7 +345,7 @@ namespace Layouter.Services
 
                 // 创建特殊的隐藏文件夹来存储隐藏的图标
                 string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                string hiddenFolderPath = Path.Combine(desktopPath, ".layouterhidden");
+                string hiddenFolderPath = Path.Combine(desktopPath, Env.HiddenFolderName);
 
                 // 确保隐藏文件夹存在
                 if (!Directory.Exists(hiddenFolderPath))
@@ -368,7 +391,11 @@ namespace Layouter.Services
             }
         }
 
-        // 显示桌面上的文件图标 - 配合增强版隐藏方法
+        /// <summary>
+        /// 显示桌面上的文件图标 - 配合增强版隐藏方法
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
         public bool ShowDesktopIcon(string filePath)
         {
             try
@@ -385,7 +412,7 @@ namespace Layouter.Services
 
                 // 获取隐藏文件夹路径
                 string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                string hiddenFolderPath = Path.Combine(desktopPath, ".layouterhidden");
+                string hiddenFolderPath = Path.Combine(desktopPath, Env.HiddenFolderName);
 
                 // 检查隐藏文件夹是否存在
                 if (!Directory.Exists(hiddenFolderPath))
@@ -453,7 +480,12 @@ namespace Layouter.Services
             }
         }
 
-        // 根据DesktopIcon对象隐藏或显示桌面图标
+        /// <summary>
+        /// 根据DesktopIcon对象隐藏或显示桌面图标
+        /// </summary>
+        /// <param name="icon"></param>
+        /// <param name="hide"></param>
+        /// <returns></returns>
         public bool ToggleDesktopIconVisibility(DesktopIcon icon, bool hide)
         {
             if (icon == null || string.IsNullOrEmpty(icon.IconPath))
@@ -462,6 +494,67 @@ namespace Layouter.Services
             }
 
             return hide ? HideDesktopIcon(icon.IconPath) : ShowDesktopIcon(icon.IconPath);
+        }
+
+        /// <summary>
+        /// 移除路径中的隐藏目录标识
+        /// </summary>
+        public static string RemoveHiddenPathInIconPath(string iconPath)
+        {
+            if (iconPath.Contains(Env.HiddenFolderName))
+            {
+                return iconPath.Replace($"{Env.HiddenFolderName}{Path.DirectorySeparatorChar}", "");
+            }
+            return iconPath;
+        }
+
+        /// <summary>
+        /// 为路径添加隐藏目录标识
+        /// </summary>
+        public static string CombineHiddenPathWithIconPath(string filePath)
+        {
+            if (filePath.Contains(Env.HiddenFolderName))
+            {
+                return filePath;
+            }
+            else
+            {
+                var fi = new FileInfo(filePath);
+                return filePath.Replace(fi.Name, $"{Env.HiddenFolderName}{Path.DirectorySeparatorChar}{fi.Name}");
+
+            }
+        }
+
+        /// <summary>
+        /// 获取可用的图标路径
+        /// </summary>
+        /// <param name="iconPath"></param>
+        /// <returns></returns>
+        public static string GetAvailableIconPath(string iconPath)
+        {
+            string purePath = string.Empty;
+            string hiddenPath = string.Empty;
+
+            if (iconPath.Contains(Env.HiddenFolderName))
+            {
+                purePath = RemoveHiddenPathInIconPath(iconPath);
+                hiddenPath = iconPath;
+            }
+            else
+            {
+                purePath = iconPath;
+                hiddenPath = CombineHiddenPathWithIconPath(iconPath);
+            }
+
+            if (File.Exists(purePath))
+            {
+                return purePath;
+            }
+            else if (File.Exists(hiddenPath))
+            {
+                return hiddenPath;
+            }
+            return iconPath;
         }
     }
 }

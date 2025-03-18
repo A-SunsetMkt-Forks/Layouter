@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Interop;
 using Layouter.Models;
+using Layouter.Utility;
 using Layouter.ViewModels;
 using Layouter.Views;
 
@@ -37,7 +38,11 @@ namespace Layouter.Services
             }
         }
 
-        // 获取窗口的唯一标识符
+        /// <summary>
+        /// 获取窗口的唯一标识符
+        /// </summary>
+        /// <param name="window"></param>
+        /// <returns></returns>
         private string GetWindowId(DesktopManagerWindow window)
         {
             if (!windowGuids.TryGetValue(window, out string guid))
@@ -52,7 +57,10 @@ namespace Layouter.Services
             return guid;
         }
 
-        // 保存单个分区数据
+        /// <summary>
+        /// 保存单个分区数据
+        /// </summary>
+        /// <param name="window"></param>
         public void SavePartitionData(DesktopManagerWindow window)
         {
             try
@@ -86,7 +94,7 @@ namespace Layouter.Services
                     {
                         Id = icon.Id,
                         Name = icon.Name,
-                        IconPath = icon.IconPath,
+                        IconPath = DesktopIconService.RemoveHiddenPathInIconPath(icon.IconPath),
                         Position = new PointDto { X = icon.Position.X, Y = icon.Position.Y },
                         Size = new SizeDto { Width = icon.Size.Width, Height = icon.Size.Height }
                     });
@@ -124,7 +132,11 @@ namespace Layouter.Services
             SaveWindowsMetadata(windows);
         }
 
-        // 保存窗口元数据（用于跟踪已打开的窗口）
+
+        /// <summary>
+        /// 保存窗口元数据（用于跟踪已打开的窗口）
+        /// </summary>
+        /// <param name="windows"></param>
         private void SaveWindowsMetadata(List<DesktopManagerWindow> windows)
         {
             try
@@ -165,7 +177,9 @@ namespace Layouter.Services
             }
         }
 
-        // 保存窗口ID映射
+        /// <summary>
+        /// 保存窗口ID映射
+        /// </summary>
         private void SaveWindowIdMapping()
         {
             try
@@ -205,7 +219,9 @@ namespace Layouter.Services
             }
         }
 
-        // 加载窗口ID映射
+        /// <summary>
+        /// 加载窗口ID映射
+        /// </summary>
         private void LoadWindowIdMapping()
         {
             try
@@ -245,7 +261,9 @@ namespace Layouter.Services
             }
         }
 
-        // 恢复上次会话的所有窗口
+        /// <summary>
+        /// 恢复上次会话的所有窗口
+        /// </summary>
         public void RestoreWindows()
         {
             try
@@ -315,7 +333,11 @@ namespace Layouter.Services
             }
         }
 
-        // 加载分区数据（新增重载以支持指定windowId）
+        /// <summary>
+        /// 加载分区数据
+        /// </summary>
+        /// <param name="window"></param>
+        /// <param name="specificWindowId"></param>
         public void LoadPartitionData(DesktopManagerWindow window, string specificWindowId = null)
         {
             try
@@ -357,7 +379,7 @@ namespace Layouter.Services
                             {
                                 Id = iconData.Id,
                                 Name = iconData.Name,
-                                IconPath = iconData.IconPath,
+                                IconPath = DesktopIconService.GetAvailableIconPath(iconData.IconPath),
                                 Position = new Point(iconData.Position.X, iconData.Position.Y),
                                 Size = new Size(iconData.Size.Width, iconData.Size.Height)
                             };

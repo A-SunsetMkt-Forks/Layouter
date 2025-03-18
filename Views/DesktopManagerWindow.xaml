@@ -18,7 +18,7 @@
         AllowDrop="True"
         ResizeMode="CanResizeWithGrip"
         ShowInTaskbar="False">
-    
+
     <Window.Resources>
         <ContextMenu x:Key="PartitionContextMenu">
             <MenuItem Header="自动排列图标" Click="AutoArrange_Click"/>
@@ -26,14 +26,21 @@
             <Separator/>
             <MenuItem Header="关闭分区" Click="ClosePartition_Click"/>
         </ContextMenu>
+
+        <ContextMenu x:Key="IconContextMenu">
+            <MenuItem Header="打开" Click="MenuItem_Open"/>
+            <MenuItem Header="删除" Click="MenuItem_Delete"/>
+            <Separator />
+            <MenuItem Header="属性" Click="MenuItem_Properties"/>
+        </ContextMenu>
     </Window.Resources>
-    
+
     <Grid>
         <!-- 分区标题栏 -->
         <DockPanel Height="30" VerticalAlignment="Top" Background="#40808080" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
             <TextBlock x:Name="TitleTextBlock" Text="{Binding Name}" Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#303030" MouseDown="TitleTextBlock_MouseDown" />
             <TextBox x:Name="TitleEditBox" Visibility="Collapsed" Margin="10,3,0,3" VerticalAlignment="Center" KeyDown="TitleEditBox_KeyDown" LostFocus="TitleEditBox_LostFocus" />
-            
+
             <!-- 功能按钮区域 -->
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                 <!-- 新增分区按钮 -->
@@ -41,20 +48,20 @@
                         Background="Transparent" BorderThickness="0" Click="NewPartition_Click">
                     <TextBlock Text="+" FontSize="16" FontWeight="Bold" Foreground="#505050" />
                 </Button>
-                
+
                 <!-- 设置按钮 -->
                 <Button Width="30" Height="30" ToolTip="设置" 
                         Background="Transparent" BorderThickness="0" Click="Settings_Click" x:Name="SettingsButton">
                     <TextBlock Text="⚙" FontSize="16" Foreground="#505050" />
                 </Button>
-                
+
                 <!-- 关闭按钮 -->
                 <Button Content="×" Width="30" Height="30" HorizontalAlignment="Right" 
                         Click="ClosePartition_Click" 
                         Background="Transparent" BorderThickness="0" FontSize="16" Foreground="#505050"/>
             </StackPanel>
         </DockPanel>
-        
+
         <!-- 设置菜单 -->
         <Popup x:Name="SettingsPopup" StaysOpen="False" PlacementTarget="{Binding ElementName=SettingsButton}" Placement="Bottom">
             <Border Background="White" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="3">
@@ -66,46 +73,41 @@
                 </StackPanel>
             </Border>
         </Popup>
-        
+
         <!-- 图标区域 -->
         <ItemsControl ItemsSource="{Binding Icons}" Margin="5,35,5,5" 
                      AllowDrop="True" Background="Transparent"
                      x:Name="iconsContainer"
                      PreviewMouseLeftButtonDown="IconsContainer_PreviewMouseLeftButtonDown"
                      PreviewMouseMove="IconsContainer_PreviewMouseMove"
-                     Drop="IconsContainer_Drop">
+                     Drop="IconsContainer_Drop"
+                     ContextMenu="{StaticResource PartitionContextMenu}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <Canvas IsItemsHost="True" Background="{Binding BackgroundColor}"/>
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
-            
+
             <ItemsControl.ItemContainerStyle>
                 <Style TargetType="ContentPresenter">
                     <Setter Property="Canvas.Left" Value="{Binding Position.X}"/>
                     <Setter Property="Canvas.Top" Value="{Binding Position.Y}"/>
                 </Style>
             </ItemsControl.ItemContainerStyle>
-            
+
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <Grid Width="{Binding Size.Width}"
                           Height="{Binding Size.Height}"
-                          Tag="{Binding}" 
-                          MouseLeftButtonDown="Icon_MouseDown">
-                        <Grid.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="打开" Click="MenuItem_Open" Tag="{Binding}"/>
-                                <MenuItem Header="删除" Click="MenuItem_Delete" Tag="{Binding}"/>
-                                <Separator />
-                                <MenuItem Header="属性" Click="MenuItem_Properties" Tag="{Binding}"/>
-                            </ContextMenu>
-                        </Grid.ContextMenu>
-                        
+                          Tag="{Binding}"
+                          MouseLeftButtonDown="Icon_MouseDown"
+                          MouseLeftButtonUp="Icon_MouseUp"
+                          ContextMenu="{StaticResource IconContextMenu}"
+                          >
                         <Rectangle Fill="Transparent" />
-                        
+
                         <!-- 图标 -->
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" >
                             <!-- 使用文件系统图标 -->
                             <Image Width="32" Height="32"
                                    Stretch="Uniform"
@@ -115,7 +117,7 @@
                                     <Binding Path="IconPath" Converter="{StaticResource FilePathToIconConverter}"/>
                                 </Image.Source>
                             </Image>
-                                   
+
                             <!-- 文件名称 -->
                             <TextBlock Text="{Binding Name}"
                                      TextWrapping="Wrap"

@@ -1,15 +1,10 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Shell;
 using Layouter.Models;
 using Layouter.Services;
 using Layouter.Utility;
@@ -20,7 +15,7 @@ namespace Layouter.Views
     public partial class DesktopManagerWindow : Window
     {
         // 分区ViewModel
-        private PartitionViewModel _viewModel;
+        private PartitionViewModel vm;
         private Point? dragStartPoint = null;
         private bool isDragging = false;
         private DesktopIcon draggedIcon = null;
@@ -30,12 +25,12 @@ namespace Layouter.Views
             InitializeComponent();
 
             // 创建ViewModel并设置为DataContext
-            _viewModel = new PartitionViewModel
+            vm = new PartitionViewModel
             {
                 Name = $"分区 {DateTime.Now.ToString("HH:mm:ss")}"
             };
 
-            DataContext = _viewModel;
+            DataContext = vm;
 
             // 挂载事件
             Loaded += DesktopManagerWindow_Loaded;
@@ -69,18 +64,38 @@ namespace Layouter.Views
 
         private void DesktopManagerWindow_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            var contextMenu = this.FindResource("PartitionContextMenu") as ContextMenu;
-            if (contextMenu != null)
+            // 检查点击位置是否在图标上
+            var clickedElement = e.OriginalSource as FrameworkElement;
+            while (clickedElement != null && !(clickedElement.Tag is DesktopIcon))
             {
-                contextMenu.IsOpen = true;
+                clickedElement = clickedElement.Parent as FrameworkElement;
+            }
+
+            if (clickedElement != null && clickedElement.Tag is DesktopIcon icon)
+            {
+                var iconCtxMenu = this.TryFindResource("IconContextMenu") as ContextMenu;
+
+                if (iconCtxMenu != null)
+                {
+                    iconCtxMenu.Tag = icon; //将图标传递给右键菜单项
+                    iconCtxMenu.IsOpen = true;
+                }
+            }
+            else
+            {
+                // 点击空白区域，不弹出图标右键菜单
+                var contextMenu = this.TryFindResource("PartitionContextMenu") as ContextMenu;
+                if (contextMenu != null)
+                {
+                    contextMenu.IsOpen = true;
+                }
             }
         }
 
         private void DesktopManagerWindow_PreviewDragOver(object sender, DragEventArgs e)
         {
             // 支持文件拖拽
-            if (e.Data.GetDataPresent(DataFormats.FileDrop) ||
-                e.Data.GetDataPresent("DraggedIconSource"))
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent("DraggedIconSource"))
             {
                 e.Effects = DragDropEffects.Move;
             }
@@ -116,7 +131,7 @@ namespace Layouter.Views
                     {
                         string filePath = files[0]; // 取第一个文件
 
-                        // 检查是否已经在这个分区中 - 如果已存在则静默返回，不提示
+                        // 检查是否已经在这个分区中
                         var viewModel = DataContext as PartitionViewModel;
                         if (viewModel.Icons.Any(i => i.IconPath.Equals(filePath, StringComparison.OrdinalIgnoreCase)))
                         {
@@ -132,15 +147,6 @@ namespace Layouter.Views
                             Position = new Point(x, y),
                             Size = new Size(64, 64)
                         };
-
-                        // 隐藏桌面上的原图标
-                        var desktopIconService = new DesktopIconService();
-                        bool hidden = desktopIconService.HideDesktopIcon(filePath);
-
-                        if (!hidden)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"警告：无法隐藏桌面上的图标，但仍会将其添加到分区：{filePath}");
-                        }
                     }
                 }
                 // 如果是从其他分区拖过来的
@@ -206,6 +212,17 @@ namespace Layouter.Views
                     // 保存分区数据
                     SavePartitionData();
 
+                    // 如果是从另一个分区拖过来的图标，执行一次图标对齐
+                    if (data.GetDataPresent("DraggedIconSource") && data.GetData("DraggedIconSource").ToString() == "Partition")
+                    {
+                        // 延迟执行排列，确保新图标已经加入集合
+                        Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            viewModel?.ArrangeIcons();
+                            System.Diagnostics.Debug.WriteLine("已在目标分区执行图标对齐");
+                        }));
+                    }
+
                     e.Handled = true;
                 }
             }
@@ -239,38 +256,6 @@ namespace Layouter.Views
             {
                 System.Diagnostics.Debug.WriteLine($"加载分区数据时出错: {ex.Message}");
             }
-        }
-
-        // Win32 API
-        [DllImport("user32.dll")]
-        private static extern bool GetCursorPos(out POINT lpPoint);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr WindowFromPoint(POINT Point);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
-
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
-
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct POINT
-        {
-            public int X;
-            public int Y;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct RECT
-        {
-            public int Left;
-            public int Top;
-            public int Right;
-            public int Bottom;
         }
 
         // 处理图标已被拖放到其他分区的通知
@@ -535,10 +520,13 @@ namespace Layouter.Views
             {
                 // 获取菜单项的Tag，即对应的DesktopIcon对象
                 var menuItem = sender as MenuItem;
-                if (menuItem?.Tag is DesktopIcon icon)
+                var contextMenu = menuItem?.Parent as ContextMenu;
+
+                //获取在DesktopManagerWindow_MouseRightButtonDown事件中设置的Tag
+                if (contextMenu?.Tag is DesktopIcon icon)
                 {
-                    // 使用Process.Start打开文件
-                    Process.Start(icon.IconPath);
+                    // 使用我们的辅助方法打开文件
+                    OpenFileOrProgram(icon.IconPath);
                 }
             }
             catch (Exception ex)
@@ -553,17 +541,29 @@ namespace Layouter.Views
             {
                 // 获取菜单项的Tag，即对应的DesktopIcon对象
                 var menuItem = sender as MenuItem;
-                if (menuItem?.Tag is DesktopIcon icon)
+                var contextMenu = menuItem?.Parent as ContextMenu;
+
+                //获取在DesktopManagerWindow_MouseRightButtonDown事件中设置的Tag
+                if (contextMenu?.Tag is DesktopIcon icon)
                 {
                     // 确认是否删除
                     MessageBoxResult result = MessageBox.Show(
-                        "确定要从分区中删除此图标吗？",
+                        "确定要从分区中删除此图标吗？将会恢复桌面上对应的图标。",
                         "删除确认",
                         MessageBoxButton.YesNo,
                         MessageBoxImage.Question);
 
                     if (result == MessageBoxResult.Yes)
                     {
+                        // 恢复桌面图标
+                        var desktopIconService = new DesktopIconService();
+                        bool restored = desktopIconService.ShowDesktopIcon(icon.IconPath);
+
+                        if (!restored)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"警告：无法恢复桌面上的图标，但仍会从分区中移除：{icon.IconPath}");
+                        }
+
                         // 从分区移除图标
                         var viewModel = DataContext as PartitionViewModel;
                         viewModel?.RemoveIcon(icon);
@@ -585,7 +585,10 @@ namespace Layouter.Views
             {
                 // 获取菜单项的Tag，即对应的DesktopIcon对象
                 var menuItem = sender as MenuItem;
-                if (menuItem?.Tag is DesktopIcon icon)
+                var contextMenu = menuItem?.Parent as ContextMenu;
+
+                //获取在DesktopManagerWindow_MouseRightButtonDown事件中设置的Tag
+                if (contextMenu?.Tag is DesktopIcon icon)
                 {
                     // 使用rundll32.exe打开属性对话框
                     string command = $"rundll32.exe shell32.dll,ShellExec_RunDLL properties \"{icon.IconPath}\"";
@@ -641,9 +644,9 @@ namespace Layouter.Views
                         var originalIcon = draggedIcon;
 
                         // 获取当前位置和窗口句柄，用于判断拖放结果
-                        POINT startPt;
-                        GetCursorPos(out startPt);
-                        IntPtr startWindowHandle = WindowFromPoint(startPt);
+                        Win32.POINT startPt;
+                        Win32.GetCursorPos(out startPt);
+                        IntPtr startWindowHandle = Win32.WindowFromPoint(startPt);
 
                         // 存储原始图标文件路径
                         string originalFilePath = draggedIcon.IconPath;
@@ -664,14 +667,14 @@ namespace Layouter.Views
                         var result = DragDrop.DoDragDrop(this, dataObject, DragDropEffects.Copy | DragDropEffects.Move);
 
                         // 拖拽结束，获取结束位置
-                        POINT endPt;
-                        GetCursorPos(out endPt);
-                        IntPtr endWindowHandle = WindowFromPoint(endPt);
+                        Win32.POINT endPt;
+                        Win32.GetCursorPos(out endPt);
+                        IntPtr endWindowHandle = Win32.WindowFromPoint(endPt);
 
                         // 获取当前窗口句柄和区域
                         IntPtr currentWindowHandle = new WindowInteropHelper(this).Handle;
-                        RECT currentWindowRect;
-                        GetWindowRect(currentWindowHandle, out currentWindowRect);
+                        Win32.RECT currentWindowRect;
+                        Win32.GetWindowRect(currentWindowHandle, out currentWindowRect);
 
                         // 判断是否拖放到了当前窗口外部
                         bool isOutsideCurrentWindow =
@@ -680,6 +683,7 @@ namespace Layouter.Views
 
                         // 检查是否拖放到了别的分区窗口
                         bool isOnOtherPartition = false;
+                        DesktopManagerWindow targetWindow = null;
                         foreach (var otherWindow in WindowManagerService.Instance.GetAllWindows())
                         {
                             if (otherWindow == this)
@@ -690,23 +694,46 @@ namespace Layouter.Views
                             if (endWindowHandle == otherHandle)
                             {
                                 isOnOtherPartition = true;
+                                targetWindow = otherWindow;
                                 break;
                             }
                         }
 
-                        // 如果拖放到了窗口外部，且不是到其他分区，则认为是拖放到桌面
-                        if (isOutsideCurrentWindow && !isOnOtherPartition)
+                        if (isOutsideCurrentWindow)
                         {
-                            System.Diagnostics.Debug.WriteLine("图标可能被拖到桌面或其他应用");
+                            //图标移动到了其他分区窗口
+                            if (isOnOtherPartition && targetWindow != null)
+                            {
+                                System.Diagnostics.Debug.WriteLine("图标可被移动到其他窗口");
 
-                            // 处理拖放到桌面的逻辑
+                                // 在目标分区窗口执行一次图标对齐操作
+                                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                                {
+                                    var targetViewModel = targetWindow.DataContext as PartitionViewModel;
+                                    targetViewModel?.ArrangeIcons();
+                                    System.Diagnostics.Debug.WriteLine("已在目标分区执行图标对齐");
+                                }));
+                            }
+                            // 不在任何分区窗口,则认为是拖放到桌面
+                            else
+                            {
+                                System.Diagnostics.Debug.WriteLine("图标可能被拖到桌面或其他应用");
+
+                                // 恢复桌面图标 - 从隐藏文件夹中复制回桌面
+                                var desktopIconService = new DesktopIconService();
+                                bool restored = desktopIconService.ShowDesktopIcon(originalFilePath);
+
+                                if (!restored)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"警告：无法恢复桌面上的图标：{originalFilePath}");
+                                }
+                            }
+
+                            // 从分区中移除图标
                             var viewModel = this.DataContext as PartitionViewModel;
                             if (viewModel != null)
                             {
-                                // 从分区中移除图标
                                 viewModel.RemoveIcon(originalIcon);
-
-                                // 保存更改
                                 SavePartitionData();
                             }
                         }
@@ -735,6 +762,10 @@ namespace Layouter.Views
             }
         }
 
+        private DateTime lastClickTime = DateTime.MinValue;
+        private DesktopIcon lastClickedIcon = null;
+        private const double DoubleClickTimeThreshold = 500; // 毫秒
+
         private void Icon_MouseDown(object sender, MouseButtonEventArgs e)
         {
             // 检查点击的是否是图标
@@ -758,6 +789,39 @@ namespace Layouter.Views
                 dragStartPoint = e.GetPosition(this);
                 draggedIcon = icon;
                 e.Handled = true;
+            }
+        }
+
+        private void Icon_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (isDragging)
+            {
+                // 如果正在拖动，则不处理双击
+                return;
+            }
+
+            var element = sender as FrameworkElement;
+            if (element?.Tag is DesktopIcon icon)
+            {
+                DateTime now = DateTime.Now;
+
+                // 判断是否是双击（同一个图标在短时间内点击两次）
+                if (lastClickedIcon == icon && (now - lastClickTime).TotalMilliseconds < DoubleClickTimeThreshold)
+                {
+                    // 双击，打开文件
+                    OpenFileOrProgram(icon.IconPath);
+                    e.Handled = true;
+
+                    // 重置状态，防止连续多次打开
+                    lastClickTime = DateTime.MinValue;
+                    lastClickedIcon = null;
+                }
+                else
+                {
+                    // 单击，更新状态
+                    lastClickTime = now;
+                    lastClickedIcon = icon;
+                }
             }
         }
 
@@ -797,7 +861,7 @@ namespace Layouter.Views
                         {
                             Id = Guid.NewGuid().ToString(),
                             Name = Path.GetFileNameWithoutExtension(filePath),
-                            IconPath = filePath,
+                            IconPath = DesktopIconService.CombineHiddenPathWithIconPath(filePath),
                             Position = new Point(x, y),
                             Size = new Size(64, 64)
                         };
@@ -813,6 +877,40 @@ namespace Layouter.Views
                     // 保存分区数据
                     SavePartitionData();
 
+                    // 如果是从另一个分区拖过来的图标，执行一次图标对齐
+                    if (data.GetDataPresent("DraggedIconSource") && data.GetData("DraggedIconSource").ToString() == "Partition")
+                    {
+
+                    }
+                    // 如果是从桌面拖过来的文件，则隐藏桌面上的原图标
+                    else if (data.GetDataPresent(DataFormats.FileDrop))
+                    {
+                        var files = data.GetData(DataFormats.FileDrop) as string[];
+                        if (files != null && files.Length > 0)
+                        {
+                            string filePath = files[0]; // 取第一个文件
+
+                            // 隐藏桌面上的原图标
+                            var desktopIconService = new DesktopIconService();
+                            bool hidden = desktopIconService.HideDesktopIcon(filePath);
+
+                            if (!hidden)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"警告：无法隐藏桌面上的图标，但仍会将其添加到分区：{filePath}");
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debug.WriteLine($"成功隐藏桌面上的图标：{filePath}");
+                            }
+                        }
+                    }
+
+                    // 延迟执行排列，确保新图标已经加入集合
+                    Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        viewModel?.ArrangeIcons();
+                    }));
+
                     e.Handled = true;
                 }
             }
@@ -821,6 +919,7 @@ namespace Layouter.Views
                 System.Diagnostics.Debug.WriteLine($"处理拖放时出错: {ex.Message}\n{ex.StackTrace}");
             }
         }
+
 
         // 处理图标从一个分区被移动到另一个分区的情况
         //public void HandleIconMovedToOtherPartition(string iconId)
