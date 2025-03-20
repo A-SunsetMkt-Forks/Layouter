@@ -42,23 +42,23 @@
             <TextBox x:Name="TitleEditBox" Visibility="Collapsed" Margin="10,3,0,3" VerticalAlignment="Center" KeyDown="TitleEditBox_KeyDown" LostFocus="TitleEditBox_LostFocus" />
 
             <!-- 功能按钮区域 -->
-            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
                 <!-- 新增分区按钮 -->
                 <Button Width="30" Height="30" ToolTip="新建分区" 
                         Background="Transparent" BorderThickness="0" Click="NewPartition_Click">
                     <TextBlock Text="+" FontSize="16" FontWeight="Bold" Foreground="#505050" />
                 </Button>
 
+                <!-- 关闭按钮 -->
+                <Button Content="×" Width="30" Height="30" HorizontalAlignment="Right" 
+                        Click="ClosePartition_Click" 
+                        Background="Transparent" BorderThickness="0" FontSize="16" Foreground="#505050"/>
+
                 <!-- 设置按钮 -->
                 <Button Width="30" Height="30" ToolTip="设置" 
                         Background="Transparent" BorderThickness="0" Click="Settings_Click" x:Name="SettingsButton">
                     <TextBlock Text="⚙" FontSize="16" Foreground="#505050" />
                 </Button>
-
-                <!-- 关闭按钮 -->
-                <Button Content="×" Width="30" Height="30" HorizontalAlignment="Right" 
-                        Click="ClosePartition_Click" 
-                        Background="Transparent" BorderThickness="0" FontSize="16" Foreground="#505050"/>
             </StackPanel>
         </DockPanel>
 
@@ -104,6 +104,18 @@
                           MouseLeftButtonUp="Icon_MouseUp"
                           ContextMenu="{StaticResource IconContextMenu}"
                           >
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#20FFFFFF" />
+                                        <Setter Property="Cursor" Value="Hand" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
                         <Rectangle Fill="Transparent" />
 
                         <!-- 图标 -->

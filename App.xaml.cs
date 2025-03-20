@@ -2,10 +2,12 @@ using System.Configuration;
 using System.Data;
 using System.Windows;
 using CommunityToolkit.Mvvm.DependencyInjection;
+using Layouter.Logs;
 using Layouter.Services;
 using Layouter.ViewModels;
 using Layouter.Views;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Layouter
 {
@@ -14,23 +16,32 @@ namespace Layouter
     /// </summary>
     public partial class App : Application
     {
-        private ServiceProvider _serviceProvider;
-        private TrayIconService _trayIconService;
+        private ServiceProvider serviceProvider;
+        private TrayIconService trayIconService;
 
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
+            LogConfig.Init();
+
             // 配置服务
             var services = new ServiceCollection();
             ConfigureServices(services);
 
-            _serviceProvider = services.BuildServiceProvider();
-            Ioc.Default.ConfigureServices(_serviceProvider);
+            //添加Serilog到依赖注入容器
+            services.AddLogging(loggingBuilder =>
+            {
+                loggingBuilder.ClearProviders();
+                loggingBuilder.AddSerilog(dispose: true);
+            });
+
+            serviceProvider = services.BuildServiceProvider();
+            Ioc.Default.ConfigureServices(serviceProvider);
 
             // 启动托盘图标服务而非主窗口
-            _trayIconService = _serviceProvider.GetRequiredService<TrayIconService>();
-            _trayIconService.Initialize();
+            trayIconService = serviceProvider.GetRequiredService<TrayIconService>();
+            trayIconService.Initialize();
             
             // 尝试恢复上一次的分区配置
             RestorePartitionsFromLastSession();
@@ -39,7 +50,7 @@ namespace Layouter
         private void ConfigureServices(IServiceCollection services)
         {
             // 注册服务
-            services.AddSingleton<IDataService, DataService>();
+            //services.AddSingleton<IDataService, DataService>();
             services.AddSingleton<TrayIconService>();
             services.AddSingleton<DesktopIconService>();
             services.AddSingleton<PartitionDataService>();
@@ -57,8 +68,10 @@ namespace Layouter
             SaveAllPartitions();
             
             // 清理资源
-            _trayIconService?.Dispose();
-            _serviceProvider?.Dispose();
+            trayIconService?.Dispose();
+            serviceProvider?.Dispose();
+
+            Log.CloseAndFlush(); 
 
             base.OnExit(e);
         }
@@ -72,7 +85,7 @@ namespace Layouter
             }
             catch (System.Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"恢复分区配置失败: {ex.Message}");
+                Log.Information($"恢复分区配置失败: {ex.Message}");
                 
                 // 如果恢复失败，确保至少创建一个新分区
                 var window = new DesktopManagerWindow();
@@ -89,7 +102,7 @@ namespace Layouter
             }
             catch (System.Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"保存分区配置失败: {ex.Message}");
+                Log.Information($"保存分区配置失败: {ex.Message}");
             }
         }
     }

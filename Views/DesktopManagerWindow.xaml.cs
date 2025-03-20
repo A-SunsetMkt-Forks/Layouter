@@ -46,6 +46,8 @@ namespace Layouter.Views
             WindowManagerService.Instance.RegisterWindow(this);
         }
 
+        public string WindowId { get; set; }
+
         private void DesktopManagerWindow_Loaded(object sender, RoutedEventArgs e)
         {
             // 加载分区数据
@@ -219,7 +221,7 @@ namespace Layouter.Views
                         Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                         {
                             viewModel?.ArrangeIcons();
-                            System.Diagnostics.Debug.WriteLine("已在目标分区执行图标对齐");
+                            Log.Information("已在目标分区执行图标对齐");
                         }));
                     }
 
@@ -228,7 +230,7 @@ namespace Layouter.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"处理拖放时出错: {ex.Message}\n{ex.StackTrace}");
+                Log.Information($"处理拖放时出错: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -241,7 +243,7 @@ namespace Layouter.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"保存分区数据时出错: {ex.Message}");
+                Log.Information($"保存分区数据时出错: {ex.Message}");
             }
         }
 
@@ -254,7 +256,7 @@ namespace Layouter.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"加载分区数据时出错: {ex.Message}");
+                Log.Information($"加载分区数据时出错: {ex.Message}");
             }
         }
 
@@ -268,7 +270,7 @@ namespace Layouter.Views
 
                 if (icon != null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"收到通知：图标已被移动到其他分区，从当前分区移除: {icon.Name}");
+                    Log.Information($"收到通知：图标已被移动到其他分区，从当前分区移除: {icon.Name}");
 
                     // 从当前分区中移除图标
                     viewModel.RemoveIcon(icon);
@@ -279,7 +281,7 @@ namespace Layouter.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"处理图标移动通知时出错: {ex.Message}");
+                Log.Information($"处理图标移动通知时出错: {ex.Message}");
             }
         }
 
@@ -315,7 +317,7 @@ namespace Layouter.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"显示标题编辑器时出错: {ex.Message}");
+                Log.Information($"显示标题编辑器时出错: {ex.Message}");
             }
         }
 
@@ -364,7 +366,7 @@ namespace Layouter.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"保存标题编辑时出错: {ex.Message}");
+                Log.Information($"保存标题编辑时出错: {ex.Message}");
             }
         }
 
@@ -400,11 +402,11 @@ namespace Layouter.Views
                 // 在新窗口显示后让标题变为可编辑状态
                 window.EnableTitleEditOnFirstLoad();
 
-                System.Diagnostics.Debug.WriteLine("已创建新分区窗口");
+                Log.Information("已创建新分区窗口");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"创建新分区窗口时出错: {ex.Message}");
+                Log.Information($"创建新分区窗口时出错: {ex.Message}");
             }
         }
 
@@ -423,8 +425,7 @@ namespace Layouter.Views
             if (result == MessageBoxResult.OK)
             {
                 // 执行删除操作
-                var windowManagerService = WindowManagerService.Instance;
-                windowManagerService.RemovePartitionWindow(this.Title);
+                WindowManagerService.Instance.RemovePartitionWindow(this);
             }
         }
 
@@ -452,51 +453,7 @@ namespace Layouter.Views
             // 关闭设置菜单
             SettingsPopup.IsOpen = false;
 
-            try
-            {
-                // 获取所有分区窗口
-                var windows = Application.Current.Windows.OfType<DesktopManagerWindow>().ToList();
-                if (windows.Count <= 1)
-                    return;
-
-                // 获取屏幕工作区尺寸
-                double screenWidth = SystemParameters.WorkArea.Width;
-                double screenHeight = SystemParameters.WorkArea.Height;
-
-                // 计算每个窗口的理想尺寸
-                int numWindows = windows.Count;
-                int numCols = (int)Math.Ceiling(Math.Sqrt(numWindows));
-                int numRows = (int)Math.Ceiling((double)numWindows / numCols);
-
-                double windowWidth = screenWidth / numCols;
-                double windowHeight = screenHeight / numRows;
-
-                // 分配窗口位置
-                for (int i = 0; i < windows.Count; i++)
-                {
-                    int row = i / numCols;
-                    int col = i % numCols;
-
-                    // 计算窗口位置
-                    double left = col * windowWidth;
-                    double top = row * windowHeight;
-
-                    // 设置窗口位置和大小
-                    windows[i].Left = left;
-                    windows[i].Top = top;
-                    windows[i].Width = windowWidth;
-                    windows[i].Height = windowHeight;
-
-                    // 保存每个窗口的数据
-                    windows[i].SavePartitionData();
-                }
-
-                System.Diagnostics.Debug.WriteLine("已对齐所有分区窗口");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"对齐分区窗口时出错: {ex.Message}");
-            }
+            WindowManagerService.Instance.ArrangeWindows();
         }
 
         private void ClosePartition_Click(object sender, RoutedEventArgs e)
@@ -561,7 +518,7 @@ namespace Layouter.Views
 
                         if (!restored)
                         {
-                            System.Diagnostics.Debug.WriteLine($"警告：无法恢复桌面上的图标，但仍会从分区中移除：{icon.IconPath}");
+                            Log.Information($"警告：无法恢复桌面上的图标，但仍会从分区中移除：{icon.IconPath}");
                         }
 
                         // 从分区移除图标
@@ -704,20 +661,20 @@ namespace Layouter.Views
                             //图标移动到了其他分区窗口
                             if (isOnOtherPartition && targetWindow != null)
                             {
-                                System.Diagnostics.Debug.WriteLine("图标可被移动到其他窗口");
+                                Log.Information("图标可被移动到其他窗口");
 
                                 // 在目标分区窗口执行一次图标对齐操作
                                 Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                                 {
                                     var targetViewModel = targetWindow.DataContext as PartitionViewModel;
                                     targetViewModel?.ArrangeIcons();
-                                    System.Diagnostics.Debug.WriteLine("已在目标分区执行图标对齐");
+                                    Log.Information("已在目标分区执行图标对齐");
                                 }));
                             }
                             // 不在任何分区窗口,则认为是拖放到桌面
                             else
                             {
-                                System.Diagnostics.Debug.WriteLine("图标可能被拖到桌面或其他应用");
+                                Log.Information("图标可能被拖到桌面或其他应用");
 
                                 // 恢复桌面图标 - 从隐藏文件夹中复制回桌面
                                 var desktopIconService = new DesktopIconService();
@@ -725,7 +682,7 @@ namespace Layouter.Views
 
                                 if (!restored)
                                 {
-                                    System.Diagnostics.Debug.WriteLine($"警告：无法恢复桌面上的图标：{originalFilePath}");
+                                    Log.Information($"警告：无法恢复桌面上的图标：{originalFilePath}");
                                 }
                             }
 
@@ -748,7 +705,7 @@ namespace Layouter.Views
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"拖放操作异常: {ex.Message}\n{ex.StackTrace}");
+                        Log.Information($"拖放操作异常: {ex.Message}\n{ex.StackTrace}");
 
                         // 出现异常时重置状态
                         isDragging = false;
@@ -840,6 +797,9 @@ namespace Layouter.Views
                 double x = dropPoint.X;
                 double y = dropPoint.Y;
 
+                // 判断是否是从另一个分区拖过来的图标(true:是,false:不是)
+                bool flag = data.GetDataPresent("DraggedIconSource") && (data.GetData("DraggedIconSource").ToString() == "Partition");
+
                 // 检查是否是从其他来源拖过来的文件
                 if (data.GetDataPresent(DataFormats.FileDrop))
                 {
@@ -861,10 +821,17 @@ namespace Layouter.Views
                         {
                             Id = Guid.NewGuid().ToString(),
                             Name = Path.GetFileNameWithoutExtension(filePath),
-                            IconPath = DesktopIconService.CombineHiddenPathWithIconPath(filePath),
+                            IconPath = DesktopIconService.Instance.CombineHiddenPathWithIconPath(filePath),
                             Position = new Point(x, y),
                             Size = new Size(64, 64)
                         };
+
+                        if (flag)
+                        {
+                            //保持图标路径不变
+                            newIcon.IconPath = filePath;
+                        }
+
                     }
                 }
 
@@ -877,30 +844,26 @@ namespace Layouter.Views
                     // 保存分区数据
                     SavePartitionData();
 
-                    // 如果是从另一个分区拖过来的图标，执行一次图标对齐
-                    if (data.GetDataPresent("DraggedIconSource") && data.GetData("DraggedIconSource").ToString() == "Partition")
-                    {
-
-                    }
                     // 如果是从桌面拖过来的文件，则隐藏桌面上的原图标
-                    else if (data.GetDataPresent(DataFormats.FileDrop))
+                    if (!flag && data.GetDataPresent(DataFormats.FileDrop))
                     {
                         var files = data.GetData(DataFormats.FileDrop) as string[];
                         if (files != null && files.Length > 0)
                         {
-                            string filePath = files[0]; // 取第一个文件
+                            string filePath = files[0];
 
+                            //确保图标路径为桌面图标路径
+                            filePath = DesktopIconService.Instance.RemoveHiddenPathInIconPath(filePath);
                             // 隐藏桌面上的原图标
-                            var desktopIconService = new DesktopIconService();
-                            bool hidden = desktopIconService.HideDesktopIcon(filePath);
+                            bool hidden = DesktopIconService.Instance.HideDesktopIcon(filePath);
 
                             if (!hidden)
                             {
-                                System.Diagnostics.Debug.WriteLine($"警告：无法隐藏桌面上的图标，但仍会将其添加到分区：{filePath}");
+                                Log.Information($"警告：无法隐藏桌面上的图标，但仍会将其添加到分区：{filePath}");
                             }
                             else
                             {
-                                System.Diagnostics.Debug.WriteLine($"成功隐藏桌面上的图标：{filePath}");
+                                Log.Information($"成功隐藏桌面上的图标：{filePath}");
                             }
                         }
                     }
@@ -916,7 +879,7 @@ namespace Layouter.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"处理拖放时出错: {ex.Message}\n{ex.StackTrace}");
+                Log.Information($"处理拖放时出错: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -939,13 +902,13 @@ namespace Layouter.Views
         //                // 保存数据
         //                SavePartitionData();
 
-        //                System.Diagnostics.Debug.WriteLine($"图标已从源分区移除: {iconToRemove.Name}");
+        //                Log.Information($"图标已从源分区移除: {iconToRemove.Name}");
         //            }
         //        }
         //    }
         //    catch (Exception ex)
         //    {
-        //        System.Diagnostics.Debug.WriteLine($"处理图标移动时出错: {ex.Message}");
+        //        Log.Information($"处理图标移动时出错: {ex.Message}");
         //    }
         //}
 

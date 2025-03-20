@@ -13,8 +13,7 @@ namespace Layouter.Services
 {
     public class PartitionDataService
     {
-        private static readonly Lazy<PartitionDataService> instance =
-            new Lazy<PartitionDataService>(() => new PartitionDataService());
+        private static readonly Lazy<PartitionDataService> instance = new Lazy<PartitionDataService>(() => new PartitionDataService());
 
         public static PartitionDataService Instance => instance.Value;
 
@@ -52,7 +51,7 @@ namespace Layouter.Services
                 windowGuids[window] = guid;
 
                 // 调试信息
-                System.Diagnostics.Debug.WriteLine($"为窗口 {window.GetHashCode()} 创建新GUID: {guid}");
+                Log.Information($"为窗口 {window.GetHashCode()} 创建新GUID: {guid}");
             }
             return guid;
         }
@@ -70,7 +69,7 @@ namespace Layouter.Services
                 {
                     return;
                 }
-                string windowId = GetWindowId(window);
+                string windowId = window.WindowId ?? GetWindowId(window);
 
                 // 创建要保存的DTO
                 var partitionData = new PartitionDataDto
@@ -94,7 +93,7 @@ namespace Layouter.Services
                     {
                         Id = icon.Id,
                         Name = icon.Name,
-                        IconPath = DesktopIconService.RemoveHiddenPathInIconPath(icon.IconPath),
+                        IconPath = DesktopIconService.Instance.RemoveHiddenPathInIconPath(icon.IconPath),
                         Position = new PointDto { X = icon.Position.X, Y = icon.Position.Y },
                         Size = new SizeDto { Width = icon.Size.Width, Height = icon.Size.Height }
                     });
@@ -115,7 +114,7 @@ namespace Layouter.Services
             catch (Exception ex)
             {
                 // 记录错误但不抛出异常
-                System.Diagnostics.Debug.WriteLine($"保存分区数据失败: {ex.Message}");
+                Log.Information($"保存分区数据失败: {ex.Message}");
             }
         }
 
@@ -148,7 +147,7 @@ namespace Layouter.Services
 
                 foreach (var window in windows)
                 {
-                    string windowId = GetWindowId(window);
+                    string windowId = window.WindowId ?? GetWindowId(window);
 
                     // 确保ID不为空和0
                     if (string.IsNullOrEmpty(windowId) || windowId == "0")
@@ -160,7 +159,7 @@ namespace Layouter.Services
                     metadata.WindowIds.Add(windowId);
 
                     // 调试信息
-                    System.Diagnostics.Debug.WriteLine($"添加窗口ID到元数据: {windowId}");
+                    Log.Information($"添加窗口ID到元数据: {windowId}");
                 }
 
                 string json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
@@ -168,12 +167,12 @@ namespace Layouter.Services
                 File.WriteAllText(filePath, json);
 
                 // 调试信息
-                System.Diagnostics.Debug.WriteLine($"保存窗口元数据到: {filePath}");
-                System.Diagnostics.Debug.WriteLine($"元数据内容: {json}");
+                Log.Information($"保存窗口元数据到: {filePath}");
+                Log.Information($"元数据内容: {json}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"保存窗口元数据失败: {ex.Message}");
+                Log.Information($"保存窗口元数据失败: {ex.Message}");
             }
         }
 
@@ -202,7 +201,7 @@ namespace Layouter.Services
                     mapping[key] = value;
 
                     // 调试信息
-                    System.Diagnostics.Debug.WriteLine($"保存窗口ID映射: {key} -> {value}");
+                    Log.Information($"保存窗口ID映射: {key} -> {value}");
                 }
 
                 string json = JsonSerializer.Serialize(mapping, new JsonSerializerOptions { WriteIndented = true });
@@ -210,12 +209,12 @@ namespace Layouter.Services
                 File.WriteAllText(filePath, json);
 
                 // 调试信息
-                System.Diagnostics.Debug.WriteLine($"保存窗口ID映射到: {filePath}");
-                System.Diagnostics.Debug.WriteLine($"映射内容: {json}");
+                Log.Information($"保存窗口ID映射到: {filePath}");
+                Log.Information($"映射内容: {json}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"保存窗口ID映射失败: {ex.Message}");
+                Log.Information($"保存窗口ID映射失败: {ex.Message}");
             }
         }
 
@@ -245,7 +244,7 @@ namespace Layouter.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"加载窗口ID映射失败: {ex.Message}");
+                Log.Information($"加载窗口ID映射失败: {ex.Message}");
             }
         }
 
@@ -271,13 +270,7 @@ namespace Layouter.Services
                 // 首先加载窗口ID映射
                 LoadWindowIdMapping();
 
-                string metadataPath = Path.Combine(dataDirectory, "windows_metadata.json");
-                if (!File.Exists(metadataPath))
-                {
-                    return;
-                }
-                string json = File.ReadAllText(metadataPath);
-                var metadata = JsonSerializer.Deserialize<WindowsMetadataDto>(json);
+                var metadata = GetMetadata();
 
                 if (metadata == null || metadata.WindowIds == null || metadata.WindowIds.Count == 0)
                 {
@@ -289,7 +282,7 @@ namespace Layouter.Services
                     // 验证GUID是否有效
                     if (string.IsNullOrEmpty(windowId) || windowId == "0")
                     {
-                        System.Diagnostics.Debug.WriteLine("跳过无效的窗口ID: " + (windowId ?? "null"));
+                        Log.Information("跳过无效的窗口ID: " + (windowId ?? "null"));
                         continue;
                     }
 
@@ -297,7 +290,7 @@ namespace Layouter.Services
                     bool idAlreadyUsed = windowGuids.Values.Contains(windowId);
                     if (idAlreadyUsed)
                     {
-                        System.Diagnostics.Debug.WriteLine($"ID已被使用，跳过: {windowId}");
+                        Log.Information($"ID已被使用，跳过: {windowId}");
                         continue;
                     }
 
@@ -309,13 +302,13 @@ namespace Layouter.Services
                     string partitionPath = Path.Combine(dataDirectory, $"partition_{windowId}.json");
                     if (File.Exists(partitionPath))
                     {
-                        System.Diagnostics.Debug.WriteLine($"为窗口 {window.GetHashCode()} 加载配置: {windowId}");
+                        Log.Information($"为窗口 {window.GetHashCode()} 加载配置: {windowId}");
                         LoadPartitionData(window, windowId);
                         window.Show();
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine($"未找到窗口 {windowId} 的配置，使用新ID");
+                        Log.Information($"未找到窗口 {windowId} 的配置，使用新ID");
                         // 如果找不到配置，使用新GUID
                         windowGuids[window] = Guid.NewGuid().ToString();
                         window.Show();
@@ -324,13 +317,23 @@ namespace Layouter.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"恢复窗口失败: {ex.Message}");
+                Log.Information($"恢复窗口失败: {ex.Message}");
 
                 // 如果恢复失败，创建一个新窗口（确保使用新GUID）
                 var window = new DesktopManagerWindow();
                 windowGuids[window] = Guid.NewGuid().ToString();
                 window.Show();
             }
+        }
+
+        public void RemoveWindow(string windowId)
+        {
+            var metadata = GetMetadata();
+            metadata.WindowIds.Remove(windowId);
+
+            string json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
+            string filePath = Path.Combine(dataDirectory, "windows_metadata.json");
+            File.WriteAllText(filePath, json);
         }
 
         /// <summary>
@@ -343,9 +346,11 @@ namespace Layouter.Services
             try
             {
                 string windowId = specificWindowId ?? GetWindowId(window);
+                window.WindowId = windowId;
+
                 string filePath = Path.Combine(dataDirectory, $"partition_{windowId}.json");
 
-                System.Diagnostics.Debug.WriteLine($"尝试加载分区数据: {filePath}");
+                Log.Information($"尝试加载分区数据: {filePath}");
 
                 // 只有在明确指定ID或找到对应配置文件时才加载该文件
                 if (File.Exists(filePath))
@@ -355,7 +360,7 @@ namespace Layouter.Services
 
                     if (partitionData == null)
                     {
-                        System.Diagnostics.Debug.WriteLine("配置文件内容为空或格式无效");
+                        Log.Information("配置文件内容为空或格式无效");
                         return;
                     }
 
@@ -379,7 +384,7 @@ namespace Layouter.Services
                             {
                                 Id = iconData.Id,
                                 Name = iconData.Name,
-                                IconPath = DesktopIconService.GetAvailableIconPath(iconData.IconPath),
+                                IconPath = DesktopIconService.Instance.GetAvailableIconPath(iconData.IconPath),
                                 Position = new Point(iconData.Position.X, iconData.Position.Y),
                                 Size = new Size(iconData.Size.Width, iconData.Size.Height)
                             };
@@ -387,17 +392,17 @@ namespace Layouter.Services
                             viewModel.AddIcon(icon);
                         }
 
-                        System.Diagnostics.Debug.WriteLine($"成功加载分区 '{viewModel.Name}' 数据，包含 {viewModel.Icons.Count} 个图标");
+                        Log.Information($"成功加载分区 '{viewModel.Name}' 数据，包含 {viewModel.Icons.Count} 个图标");
                     }
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine($"未找到配置文件: {filePath}");
+                    Log.Information($"未找到配置文件: {filePath}");
 
                     // 如果是没有指定ID的情况，不要尝试加载其他窗口的配置
                     if (specificWindowId == null)
                     {
-                        System.Diagnostics.Debug.WriteLine("使用新窗口默认设置");
+                        Log.Information("使用新窗口默认设置");
                         // 这是一个新窗口，确保它有一个唯一的GUID
                         windowGuids[window] = Guid.NewGuid().ToString();
                     }
@@ -405,54 +410,69 @@ namespace Layouter.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"加载分区数据失败: {ex.Message}\n{ex.StackTrace}");
+                Log.Information($"加载分区数据失败: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
-        #region 数据传输对象
 
-        public class PartitionDataDto
+        private WindowsMetadataDto GetMetadata()
         {
-            public string Id { get; set; }
-            public string Name { get; set; }
-            public WindowPositionDto WindowPosition { get; set; }
-            public List<IconDataDto> Icons { get; set; }
+            string metadataPath = Path.Combine(dataDirectory, "windows_metadata.json");
+            if (!File.Exists(metadataPath))
+            {
+                return null;
+            }
+            string json = File.ReadAllText(metadataPath);
+            var metadata = JsonSerializer.Deserialize<WindowsMetadataDto>(json);
+
+            return metadata;
         }
 
-        public class WindowPositionDto
-        {
-            public double Left { get; set; }
-            public double Top { get; set; }
-            public double Width { get; set; }
-            public double Height { get; set; }
-        }
 
-        public class IconDataDto
-        {
-            public string Id { get; set; }
-            public string Name { get; set; }
-            public string IconPath { get; set; }
-            public PointDto Position { get; set; }
-            public SizeDto Size { get; set; }
-        }
-
-        public class PointDto
-        {
-            public double X { get; set; }
-            public double Y { get; set; }
-        }
-
-        public class SizeDto
-        {
-            public double Width { get; set; }
-            public double Height { get; set; }
-        }
-
-        public class WindowsMetadataDto
-        {
-            public List<string> WindowIds { get; set; }
-        }
-
-        #endregion
     }
+    #region 数据传输对象
+
+    public class PartitionDataDto
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public WindowPositionDto WindowPosition { get; set; }
+        public List<IconDataDto> Icons { get; set; }
+    }
+
+    public class WindowPositionDto
+    {
+        public double Left { get; set; }
+        public double Top { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+    }
+
+    public class IconDataDto
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string IconPath { get; set; }
+        public PointDto Position { get; set; }
+        public SizeDto Size { get; set; }
+    }
+
+    public class PointDto
+    {
+        public double X { get; set; }
+        public double Y { get; set; }
+    }
+
+    public class SizeDto
+    {
+        public double Width { get; set; }
+        public double Height { get; set; }
+    }
+
+    public class WindowsMetadataDto
+    {
+        public List<string> WindowIds { get; set; }
+    }
+
+    #endregion
 }

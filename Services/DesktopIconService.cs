@@ -12,6 +12,9 @@ namespace Layouter.Services
 {
     public class DesktopIconService
     {
+        private static readonly Lazy<DesktopIconService> instance = new Lazy<DesktopIconService>(() => new DesktopIconService());
+        public static DesktopIconService Instance => instance.Value;
+
         // 获取桌面路径
         public string GetDesktopPath()
         {
@@ -45,7 +48,7 @@ namespace Layouter.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"获取桌面图标时出错: {ex.Message}");
+                Log.Information($"获取桌面图标时出错: {ex.Message}");
             }
 
             return icons;
@@ -93,7 +96,7 @@ namespace Layouter.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"刷新桌面时出错: {ex.Message}");
+                Log.Information($"刷新桌面时出错: {ex.Message}");
             }
         }
 
@@ -138,7 +141,7 @@ namespace Layouter.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"创建桌面快捷方式时出错: {ex.Message}");
+                Log.Information($"创建桌面快捷方式时出错: {ex.Message}");
                 return false;
             }
         }
@@ -154,7 +157,7 @@ namespace Layouter.Services
             {
                 if (icon == null || string.IsNullOrEmpty(icon.IconPath))
                 {
-                    System.Diagnostics.Debug.WriteLine("创建快捷方式失败：图标或路径为空");
+                    Log.Information("创建快捷方式失败：图标或路径为空");
                     return false;
                 }
 
@@ -169,7 +172,7 @@ namespace Layouter.Services
                 bool isSourceShortcut = icon.IconPath.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase);
                 if (isSourceShortcut)
                 {
-                    System.Diagnostics.Debug.WriteLine($"源是快捷方式，直接复制到桌面: {icon.IconPath}");
+                    Log.Information($"源是快捷方式，直接复制到桌面: {icon.IconPath}");
                     return CopyFileToDesktop(icon.IconPath);
                 }
 
@@ -188,7 +191,7 @@ namespace Layouter.Services
                     } while (File.Exists(shortcutPath));
                 }
 
-                System.Diagnostics.Debug.WriteLine($"创建快捷方式：{shortcutPath} -> {targetPath}");
+                Log.Information($"创建快捷方式：{shortcutPath} -> {targetPath}");
 
                 // 创建快捷方式
                 Type shellLinkType = Type.GetTypeFromCLSID(new Guid("00021401-0000-0000-C000-000000000046"));
@@ -207,12 +210,12 @@ namespace Layouter.Services
                 // 刷新桌面
                 RefreshDesktop();
 
-                System.Diagnostics.Debug.WriteLine("快捷方式创建成功");
+                Log.Information("快捷方式创建成功");
                 return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"创建桌面快捷方式时出错: {ex.Message}\n{ex.StackTrace}");
+                Log.Information($"创建桌面快捷方式时出错: {ex.Message}\n{ex.StackTrace}");
                 return false;
             }
         }
@@ -250,11 +253,11 @@ namespace Layouter.Services
                 if (File.Exists(sourceFilePath))
                 {
                     File.Copy(sourceFilePath, targetPath);
-                    System.Diagnostics.Debug.WriteLine($"已将文件复制到桌面: {targetPath}");
+                    Log.Information($"已将文件复制到桌面: {targetPath}");
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine($"源文件不存在，无法复制: {sourceFilePath}");
+                    Log.Information($"源文件不存在，无法复制: {sourceFilePath}");
                     return false;
                 }
 
@@ -265,7 +268,7 @@ namespace Layouter.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"复制文件到桌面时出错: {ex.Message}");
+                Log.Information($"复制文件到桌面时出错: {ex.Message}");
                 return false;
             }
         }
@@ -323,7 +326,7 @@ namespace Layouter.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"将图标恢复到桌面时出错: {ex.Message}");
+                Log.Information($"将图标恢复到桌面时出错: {ex.Message}");
                 return false;
             }
         }
@@ -339,7 +342,7 @@ namespace Layouter.Services
             {
                 if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
                 {
-                    System.Diagnostics.Debug.WriteLine($"无法隐藏不存在的文件: {filePath}");
+                    Log.Information($"无法隐藏不存在的文件: {filePath}");
                     return false;
                 }
 
@@ -381,12 +384,12 @@ namespace Layouter.Services
                 // 删除原始文件
                 File.Delete(filePath);
 
-                System.Diagnostics.Debug.WriteLine($"成功隐藏桌面图标: {filePath}");
+                Log.Information($"成功隐藏桌面图标: {filePath}");
                 return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"隐藏桌面图标时出错: {ex.Message}");
+                Log.Information($"隐藏桌面图标时出错: {ex.Message}");
                 return false;
             }
         }
@@ -403,7 +406,7 @@ namespace Layouter.Services
                 // 确保文件路径有效
                 if (string.IsNullOrEmpty(filePath))
                 {
-                    System.Diagnostics.Debug.WriteLine("无法显示空路径的图标");
+                    Log.Information("无法显示空路径的图标");
                     return false;
                 }
 
@@ -417,7 +420,7 @@ namespace Layouter.Services
                 // 检查隐藏文件夹是否存在
                 if (!Directory.Exists(hiddenFolderPath))
                 {
-                    System.Diagnostics.Debug.WriteLine("隐藏文件夹不存在，无法恢复图标");
+                    Log.Information("隐藏文件夹不存在，无法恢复图标");
                     return false;
                 }
 
@@ -428,7 +431,7 @@ namespace Layouter.Services
                 // 检查文件是否存在于隐藏文件夹中
                 if (!File.Exists(hiddenFilePath))
                 {
-                    System.Diagnostics.Debug.WriteLine($"隐藏文件夹中不存在此文件: {fileName}");
+                    Log.Information($"隐藏文件夹中不存在此文件: {fileName}");
                     return false;
                 }
 
@@ -443,7 +446,7 @@ namespace Layouter.Services
                 // 如果目标位置已存在文件，我们不会覆盖它
                 if (File.Exists(originalPath))
                 {
-                    System.Diagnostics.Debug.WriteLine($"目标位置已存在文件: {originalPath}，无法恢复");
+                    Log.Information($"目标位置已存在文件: {originalPath}，无法恢复");
                     return false;
                 }
 
@@ -470,12 +473,12 @@ namespace Layouter.Services
                     }
                 }
 
-                System.Diagnostics.Debug.WriteLine($"成功显示桌面图标: {originalPath}");
+                Log.Information($"成功显示桌面图标: {originalPath}");
                 return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"显示桌面图标时出错: {ex.Message}");
+                Log.Information($"显示桌面图标时出错: {ex.Message}");
                 return false;
             }
         }
@@ -499,7 +502,7 @@ namespace Layouter.Services
         /// <summary>
         /// 移除路径中的隐藏目录标识
         /// </summary>
-        public static string RemoveHiddenPathInIconPath(string iconPath)
+        public string RemoveHiddenPathInIconPath(string iconPath)
         {
             if (iconPath.Contains(Env.HiddenFolderName))
             {
@@ -511,7 +514,7 @@ namespace Layouter.Services
         /// <summary>
         /// 为路径添加隐藏目录标识
         /// </summary>
-        public static string CombineHiddenPathWithIconPath(string filePath)
+        public string CombineHiddenPathWithIconPath(string filePath)
         {
             if (filePath.Contains(Env.HiddenFolderName))
             {
@@ -530,7 +533,7 @@ namespace Layouter.Services
         /// </summary>
         /// <param name="iconPath"></param>
         /// <returns></returns>
-        public static string GetAvailableIconPath(string iconPath)
+        public string GetAvailableIconPath(string iconPath)
         {
             string purePath = string.Empty;
             string hiddenPath = string.Empty;

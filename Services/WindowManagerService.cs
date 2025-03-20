@@ -34,8 +34,7 @@ namespace Layouter.Services
 
         public DesktopManagerWindow GetWindowByHandle(IntPtr handle)
         {
-            return managedWindows.FirstOrDefault(w =>
-                new WindowInteropHelper(w).Handle == handle);
+            return managedWindows.FirstOrDefault(w => new WindowInteropHelper(w).Handle == handle);
         }
 
         public List<DesktopManagerWindow> GetAllWindows()
@@ -55,8 +54,10 @@ namespace Layouter.Services
         public void ArrangeWindows()
         {
             var visibleWindows = managedWindows.Where(w => w.IsVisible).ToList();
-            if (visibleWindows.Count == 0) return;
-
+            if (visibleWindows.Count == 0)
+            {
+                return;
+            }
             var workArea = SystemParameters.WorkArea;
             double currentX = WindowMargin;
             double currentY = WindowMargin;
@@ -79,6 +80,9 @@ namespace Layouter.Services
                 // 更新位置
                 currentX += window.Width + WindowMargin;
                 rowHeight = Math.Max(rowHeight, window.Height);
+
+                // 保存分区数据
+                PartitionDataService.Instance.SavePartitionData(window);
             }
         }
 
@@ -130,49 +134,31 @@ namespace Layouter.Services
 
         public DesktopManagerWindow GetWindowAt(Point screenPoint)
         {
-            return managedWindows.FirstOrDefault(w =>
-                w.IsVisible &&
-                new Rect(w.Left, w.Top, w.Width, w.Height).Contains(screenPoint));
+            return managedWindows.FirstOrDefault(w => w.IsVisible && new Rect(w.Left, w.Top, w.Width, w.Height).Contains(screenPoint));
         }
 
         /// <summary>
         /// 从配置中删除指定标题的分区窗口
         /// </summary>
-        /// <param name="partitionTitle">分区标题</param>
-        public void RemovePartitionWindow(string partitionTitle)
+        /// <param name="windowId">窗口的唯一标识符</param>
+        public void RemovePartitionWindow(DesktopManagerWindow window)
         {
-            if (string.IsNullOrEmpty(partitionTitle))
+            if (window == null || string.IsNullOrEmpty(window.WindowId))
+            {
                 return;
-
+            }
             try
             {
-                // 从配置中删除分区信息
-                var configService = new ConfigurationService();
-                var config = configService.LoadConfiguration();
+                // 删除分区并更新配置
+                PartitionDataService.Instance.RemoveWindow(window.WindowId);
 
-                // 查找并删除指定标题的分区
-                var partition = config.Partitions.FirstOrDefault(p => p.Name == partitionTitle);
-                if (partition != null)
-                {
-                    config.Partitions.Remove(partition);
-                    configService.SaveConfiguration(config);
-                    System.Diagnostics.Debug.WriteLine($"已从配置中删除分区 {partitionTitle}");
-                }
-
-                // 查找并关闭具有该标题的窗口
-                var windowToRemove = managedWindows.FirstOrDefault(w =>
-                    (w.DataContext as ViewModels.PartitionViewModel)?.Name == partitionTitle);
-
-                if (windowToRemove != null)
-                {
-                    UnregisterWindow(windowToRemove);
-                    windowToRemove.Close();
-                    System.Diagnostics.Debug.WriteLine($"已关闭分区窗口 {partitionTitle}");
-                }
+                UnregisterWindow(window);
+                window.Close();
+                Log.Information($"已关闭分区窗口 {window.WindowId}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"删除分区配置时出错: {ex.Message}");
+                Log.Information($"删除分区配置时出错: {ex.Message}");
             }
         }
 

@@ -6,18 +6,24 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <AssemblyVersion>1.0.5.0</AssemblyVersion>
+    <FileVersion>1.0.5.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="MainWindow.xaml.cs" />
-    <Compile Remove="ViewModels\Feature1ViewModel.cs" />
-    <Compile Remove="Views\DesktopManagerView.xaml.cs" />
-    <Compile Remove="Views\Feature1Window.xaml.cs" />
+    <Compile Remove="Resources\Images\**" />
+    <EmbeddedResource Remove="Resources\Images\**" />
+    <None Remove="Resources\Images\**" />
+    <Page Remove="Resources\Images\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Resources\Images\readme.txt" />
-    <None Remove="ViewModels\ws1by35j.yal~" />
+    <Compile Remove="MainWindow.xaml.cs" />
+    <Compile Remove="Models\Configuration.cs" />
+    <Compile Remove="Services\ConfigurationService.cs" />
+    <Compile Remove="ViewModels\Feature1ViewModel.cs" />
+    <Compile Remove="Views\DesktopManagerView.xaml.cs" />
+    <Compile Remove="Views\Feature1Window.xaml.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,6 +37,10 @@
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
     <PackageReference Include="Material.Icons.WPF" Version="2.3.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,7 +53,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Resources\Images\" />
+    <Folder Include="Resources\" />
   </ItemGroup>
 
 </Project>
