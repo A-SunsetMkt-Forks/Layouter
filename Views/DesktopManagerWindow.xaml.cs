@@ -15,7 +15,7 @@ namespace Layouter.Views
     public partial class DesktopManagerWindow : Window
     {
         // 分区ViewModel
-        private PartitionViewModel vm;
+        private DesktopManagerViewModel vm;
         private Point? dragStartPoint = null;
         private bool isDragging = false;
         private DesktopIcon draggedIcon = null;
@@ -25,7 +25,7 @@ namespace Layouter.Views
             InitializeComponent();
 
             // 创建ViewModel并设置为DataContext
-            vm = new PartitionViewModel
+            vm = new DesktopManagerViewModel
             {
                 Name = $"分区 {DateTime.Now.ToString("HH:mm:ss")}"
             };
@@ -50,6 +50,10 @@ namespace Layouter.Views
 
         private void DesktopManagerWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            IntPtr hwnd = SysUtil.GetWindowHandle(this);
+            DesktopUtil.SetAsDesktopLevelWindow(hwnd);
+            DesktopUtil.SetAsToolWindow(hwnd);
+
             // 加载分区数据
             LoadPartitionData();
         }
@@ -134,7 +138,7 @@ namespace Layouter.Views
                         string filePath = files[0]; // 取第一个文件
 
                         // 检查是否已经在这个分区中
-                        var viewModel = DataContext as PartitionViewModel;
+                        var viewModel = DataContext as DesktopManagerViewModel;
                         if (viewModel.Icons.Any(i => i.IconPath.Equals(filePath, StringComparison.OrdinalIgnoreCase)))
                         {
                             return; // 不做任何操作，也不显示消息框
@@ -172,7 +176,7 @@ namespace Layouter.Views
                         string iconPath = data.GetData("IconPath").ToString();
 
                         // 检查是否已经在这个分区中 - 如果已存在则静默返回，不提示
-                        var viewModel = DataContext as PartitionViewModel;
+                        var viewModel = DataContext as DesktopManagerViewModel;
                         if (viewModel.Icons.Any(i => i.IconPath.Equals(iconPath, StringComparison.OrdinalIgnoreCase)))
                         {
                             return; // 不做任何操作，也不显示消息框
@@ -208,7 +212,7 @@ namespace Layouter.Views
                 // 如果成功创建了新图标，添加到当前分区
                 if (newIcon != null)
                 {
-                    var viewModel = DataContext as PartitionViewModel;
+                    var viewModel = DataContext as DesktopManagerViewModel;
                     viewModel?.AddIcon(newIcon);
 
                     // 保存分区数据
@@ -265,7 +269,7 @@ namespace Layouter.Views
         {
             try
             {
-                var viewModel = this.DataContext as PartitionViewModel;
+                var viewModel = this.DataContext as DesktopManagerViewModel;
                 var icon = viewModel?.GetIconById(iconId);
 
                 if (icon != null)
@@ -350,7 +354,7 @@ namespace Layouter.Views
                     TitleTextBlock.Text = TitleEditBox.Text;
 
                     // 更新ViewModel中的名称
-                    var viewModel = DataContext as PartitionViewModel;
+                    var viewModel = DataContext as DesktopManagerViewModel;
                     if (viewModel != null)
                     {
                         viewModel.Name = TitleEditBox.Text;
@@ -444,7 +448,7 @@ namespace Layouter.Views
             SettingsPopup.IsOpen = false;
 
             // 执行自动排列
-            var viewModel = DataContext as PartitionViewModel;
+            var viewModel = DataContext as DesktopManagerViewModel;
             viewModel?.ArrangeIcons();
         }
 
@@ -522,7 +526,7 @@ namespace Layouter.Views
                         }
 
                         // 从分区移除图标
-                        var viewModel = DataContext as PartitionViewModel;
+                        var viewModel = DataContext as DesktopManagerViewModel;
                         viewModel?.RemoveIcon(icon);
 
                         // 保存配置
@@ -666,7 +670,7 @@ namespace Layouter.Views
                                 // 在目标分区窗口执行一次图标对齐操作
                                 Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                                 {
-                                    var targetViewModel = targetWindow.DataContext as PartitionViewModel;
+                                    var targetViewModel = targetWindow.DataContext as DesktopManagerViewModel;
                                     targetViewModel?.ArrangeIcons();
                                     Log.Information("已在目标分区执行图标对齐");
                                 }));
@@ -687,7 +691,7 @@ namespace Layouter.Views
                             }
 
                             // 从分区中移除图标
-                            var viewModel = this.DataContext as PartitionViewModel;
+                            var viewModel = this.DataContext as DesktopManagerViewModel;
                             if (viewModel != null)
                             {
                                 viewModel.RemoveIcon(originalIcon);
@@ -810,7 +814,7 @@ namespace Layouter.Views
                         string filePath = files[0]; // 取第一个文件
 
                         // 检查是否已经在这个分区中 - 如果已存在则静默返回，不提示
-                        var viewModel = DataContext as PartitionViewModel;
+                        var viewModel = DataContext as DesktopManagerViewModel;
                         if (viewModel.Icons.Any(i => i.IconPath.Equals(filePath, StringComparison.OrdinalIgnoreCase)))
                         {
                             return; // 不做任何操作
@@ -838,7 +842,7 @@ namespace Layouter.Views
                 // 如果成功创建了新图标，添加到当前分区
                 if (newIcon != null)
                 {
-                    var viewModel = DataContext as PartitionViewModel;
+                    var viewModel = DataContext as DesktopManagerViewModel;
                     viewModel?.AddIcon(newIcon);
 
                     // 保存分区数据
