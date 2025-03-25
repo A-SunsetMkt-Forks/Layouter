@@ -64,7 +64,7 @@ namespace Layouter.Services
         {
             try
             {
-                var viewModel = window.DataContext as PartitionViewModel;
+                var viewModel = window.DataContext as DesktopManagerViewModel;
                 if (viewModel == null)
                 {
                     return;
@@ -371,7 +371,7 @@ namespace Layouter.Services
                     window.Height = partitionData.WindowPosition.Height;
 
                     // 更新ViewModel数据
-                    var viewModel = window.DataContext as PartitionViewModel;
+                    var viewModel = window.DataContext as DesktopManagerViewModel;
                     if (viewModel != null)
                     {
                         viewModel.Name = partitionData.Name;

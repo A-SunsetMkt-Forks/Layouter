@@ -11,6 +11,8 @@ using System.IO;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using FluentIcons.Wpf;
+using Layouter.Utility;
+using System.Collections;
 
 namespace Layouter.Services
 {
@@ -44,8 +46,6 @@ namespace Layouter.Services
         private System.Drawing.Icon CreateIconFromFluentIcon()
         {
 
-            // 创建一个FluentIcon元素
-            // 注意：根据FluentIcons.WPF的实际API调整这部分代码
             var fluentIcon = new FluentIcon()
             {
                 Icon = FluentIcons.Common.Icon.AppFolder, // 选择合适的图标
@@ -77,7 +77,6 @@ namespace Layouter.Services
                 }
             }
         }
-
 
         public void Dispose()
         {

@@ -6,7 +6,6 @@ using System.Windows;
 using System.Windows.Interop;
 using Layouter.Models;
 using Layouter.Utility;
-using static Layouter.Utility.Win32;
 
 namespace Layouter.Services
 {
@@ -62,7 +61,7 @@ namespace Layouter.Services
             try
             {
                 // 获取桌面窗口和视图
-                IntPtr hDesktop = Win32.FindWindow("Progman", "Program Manager");
+                IntPtr hDesktop = Win32.FindWindow("Progman", "Program Manager"); 
                 IntPtr hWorkerW = IntPtr.Zero;
                 IntPtr hDefView = Win32.FindWindowEx(hDesktop, IntPtr.Zero, "SHELLDLL_DefView", null);
 
@@ -87,7 +86,7 @@ namespace Layouter.Services
                         const int REFRESH_COMMAND = 0x7103;
 
                         // 使用 SendMessage 代替 HandleMessage
-                        SendMessage(hListView, WM_COMMAND, (IntPtr)REFRESH_COMMAND, IntPtr.Zero);
+                        Win32.SendMessage(hListView, WM_COMMAND, (IntPtr)REFRESH_COMMAND, IntPtr.Zero);
                     }
                 }
 
@@ -122,7 +121,7 @@ namespace Layouter.Services
                 }
 
                 Type shellLinkType = Type.GetTypeFromCLSID(new Guid("00021401-0000-0000-C000-000000000046"));
-                IShellLink link = (IShellLink)Activator.CreateInstance(shellLinkType);
+                var link = (Win32.IShellLink)Activator.CreateInstance(shellLinkType);
 
                 link.SetPath(targetPath);
                 link.SetDescription($"Shortcut to {Path.GetFileName(targetPath)}");
@@ -131,7 +130,7 @@ namespace Layouter.Services
                 link.SetIconLocation(targetPath, 0);
 
                 // 获取IPersistFile接口保存文件
-                IPersistFile file = (IPersistFile)link;
+                var file = (Win32.IPersistFile)link;
                 file.Save(shortcutPath, true);
 
                 // 刷新桌面
@@ -195,7 +194,7 @@ namespace Layouter.Services
 
                 // 创建快捷方式
                 Type shellLinkType = Type.GetTypeFromCLSID(new Guid("00021401-0000-0000-C000-000000000046"));
-                IShellLink link = (IShellLink)Activator.CreateInstance(shellLinkType);
+                var link = (Win32.IShellLink)Activator.CreateInstance(shellLinkType);
 
                 link.SetPath(targetPath);
                 link.SetDescription($"Shortcut to {Path.GetFileName(targetPath)}");
@@ -204,7 +203,7 @@ namespace Layouter.Services
                 link.SetIconLocation(targetPath, 0);
 
                 // 获取IPersistFile接口保存文件
-                IPersistFile file = (IPersistFile)link;
+                var file = (Win32.IPersistFile)link;
                 file.Save(shortcutPath, true);
 
                 // 刷新桌面
@@ -309,8 +308,8 @@ namespace Layouter.Services
                 {
                     // 获取快捷方式指向的文件
                     Type shellLinkType = Type.GetTypeFromCLSID(new Guid("00021401-0000-0000-C000-000000000046"));
-                    IShellLink link = (IShellLink)Activator.CreateInstance(shellLinkType);
-                    ((IPersistFile)link).Load(icon.IconPath, 0);
+                    var link = (Win32.IShellLink)Activator.CreateInstance(shellLinkType);
+                    ((Win32.IPersistFile)link).Load(icon.IconPath, 0);
 
                     System.Text.StringBuilder targetPath = new System.Text.StringBuilder(260);
                     link.GetPath(targetPath, targetPath.Capacity, out IntPtr _, 0);
