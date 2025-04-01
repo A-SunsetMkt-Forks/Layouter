@@ -15,6 +15,8 @@ namespace Layouter.Services
         private List<DesktopManagerWindow> managedWindows = new List<DesktopManagerWindow>();
 
         private const double WindowMargin = 5;
+        private const double SnapThreshold = 15; // 吸附阈值，当窗口边缘距离其他窗口边缘小于此值时触发吸附
+        private bool isArrangingWindows = false; // 标记是否正在执行ArrangeWindows操作
 
         private WindowManagerService() { }
 
@@ -29,6 +31,8 @@ namespace Layouter.Services
 
                 // 监听窗口位置变化
                 window.LocationChanged += Window_LocationChanged;
+                // 监听窗口大小变化
+                window.SizeChanged += Window_SizeChanged;
             }
         }
 
@@ -47,42 +51,51 @@ namespace Layouter.Services
             if (managedWindows.Contains(window))
             {
                 window.LocationChanged -= Window_LocationChanged;
+                window.SizeChanged -= Window_SizeChanged;
                 managedWindows.Remove(window);
             }
         }
 
         public void ArrangeWindows()
         {
-            var visibleWindows = managedWindows.Where(w => w.IsVisible).ToList();
-            if (visibleWindows.Count == 0)
+            try
             {
-                return;
-            }
-            var workArea = SystemParameters.WorkArea;
-            double currentX = WindowMargin;
-            double currentY = WindowMargin;
-            double rowHeight = 0;
-
-            foreach (var window in visibleWindows)
-            {
-                // 如果窗口超出屏幕宽度，则换行
-                if (currentX + window.Width + WindowMargin > workArea.Width)
+                isArrangingWindows = true;
+                var visibleWindows = managedWindows.Where(w => w.IsVisible).ToList();
+                if (visibleWindows.Count == 0)
                 {
-                    currentX = WindowMargin;
-                    currentY += rowHeight + WindowMargin;
-                    rowHeight = 0;
+                    return;
                 }
+                var workArea = SystemParameters.WorkArea;
+                double currentX = WindowMargin;
+                double currentY = WindowMargin;
+                double rowHeight = 0;
 
-                // 设置窗口位置
-                window.Left = currentX;
-                window.Top = currentY;
+                foreach (var window in visibleWindows)
+                {
+                    // 如果窗口超出屏幕宽度，则换行
+                    if (currentX + window.Width + WindowMargin > workArea.Width)
+                    {
+                        currentX = WindowMargin;
+                        currentY += rowHeight + WindowMargin;
+                        rowHeight = 0;
+                    }
 
-                // 更新位置
-                currentX += window.Width + WindowMargin;
-                rowHeight = Math.Max(rowHeight, window.Height);
+                    // 设置窗口位置
+                    window.Left = currentX;
+                    window.Top = currentY;
 
-                // 保存分区数据
-                PartitionDataService.Instance.SavePartitionData(window);
+                    // 更新位置
+                    currentX += window.Width + WindowMargin;
+                    rowHeight = Math.Max(rowHeight, window.Height);
+
+                    // 保存分区数据
+                    PartitionDataService.Instance.SavePartitionData(window);
+                }
+            }
+            finally
+            {
+                isArrangingWindows = false;
             }
         }
 
@@ -128,6 +141,11 @@ namespace Layouter.Services
         }
 
         private void Window_LocationChanged(object sender, EventArgs e)
+        {
+            // 如果需要实现实时窗口对齐，可以在这里处理
+        }
+
+        private void Window_SizeChanged(object sender, EventArgs e)
         {
             // 如果需要实现实时窗口对齐，可以在这里处理
         }
