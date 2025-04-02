@@ -15,7 +15,7 @@ namespace Layouter.Services
         private List<DesktopManagerWindow> managedWindows = new List<DesktopManagerWindow>();
 
         private const double WindowMargin = 5;
-        private const double SnapThreshold = 15; // 吸附阈值，当窗口边缘距离其他窗口边缘小于此值时触发吸附
+        private const double SnapThreshold = 10; // 吸附阈值，当窗口边缘距离其他窗口边缘小于此值时触发吸附
         private bool isArrangingWindows = false; // 标记是否正在执行ArrangeWindows操作
 
         private WindowManagerService() { }
@@ -142,12 +142,20 @@ namespace Layouter.Services
 
         private void Window_LocationChanged(object sender, EventArgs e)
         {
-            // 如果需要实现实时窗口对齐，可以在这里处理
+            if (sender is DesktopManagerWindow window && !isArrangingWindows)
+            {
+                // 检查是否需要吸附到其他窗口
+                SnapWindowPosition(window);
+            }
         }
 
         private void Window_SizeChanged(object sender, EventArgs e)
         {
-            // 如果需要实现实时窗口对齐，可以在这里处理
+            if (sender is DesktopManagerWindow window && !isArrangingWindows)
+            {
+                // 检查是否需要吸附调整大小
+                SnapWindowSize(window);
+            }
         }
 
         public DesktopManagerWindow GetWindowAt(Point screenPoint)
@@ -185,39 +193,242 @@ namespace Layouter.Services
         /// </summary>
         public void ArrangeAllPartitionWindows()
         {
-            var windows = GetAllWindows();
-            if (windows.Count == 0)
+            try
+            {
+                isArrangingWindows = true;
+                var windows = GetAllWindows();
+                if (windows.Count == 0)
+                {
+                    return;
+                }
+                // 获取屏幕工作区尺寸
+                double screenWidth = SystemParameters.WorkArea.Width;
+                double screenHeight = SystemParameters.WorkArea.Height;
+
+                // 计算每个窗口的理想尺寸
+                int numWindows = windows.Count;
+                int numCols = (int)Math.Ceiling(Math.Sqrt(numWindows));
+                int numRows = (int)Math.Ceiling((double)numWindows / numCols);
+
+                double windowWidth = (screenWidth - (numCols + 1) * WindowMargin) / numCols;
+                double windowHeight = (screenHeight - (numRows + 1) * WindowMargin) / numRows;
+
+                // 分配窗口位置
+                for (int i = 0; i < windows.Count; i++)
+                {
+                    int row = i / numCols;
+                    int col = i % numCols;
+
+                    // 计算窗口位置，考虑边距
+                    double left = col * (windowWidth + WindowMargin) + WindowMargin;
+                    double top = row * (windowHeight + WindowMargin) + WindowMargin;
+
+                    // 设置窗口位置和大小
+                    windows[i].Left = left;
+                    windows[i].Top = top;
+                    windows[i].Width = windowWidth;
+                    windows[i].Height = windowHeight;
+
+                    // 保存分区数据
+                    PartitionDataService.Instance.SavePartitionData(windows[i]);
+                }
+            }
+            finally
+            {
+                isArrangingWindows = false;
+            }
+        }
+
+        /// <summary>
+        /// 窗口位置吸附功能
+        /// </summary>
+        private void SnapWindowPosition(DesktopManagerWindow window)
+        {
+            var otherWindows = managedWindows
+                    .Where(w => w != window && w.IsVisible)
+                    .ToList();
+
+            if (otherWindows.Count == 0)
             {
                 return;
             }
-            // 获取屏幕工作区尺寸
-            double screenWidth = SystemParameters.WorkArea.Width;
-            double screenHeight = SystemParameters.WorkArea.Height;
 
-            // 计算每个窗口的理想尺寸
-            int numWindows = windows.Count;
-            int numCols = (int)Math.Ceiling(Math.Sqrt(numWindows));
-            int numRows = (int)Math.Ceiling((double)numWindows / numCols);
+            var workArea = SystemParameters.WorkArea;
 
-            double windowWidth = screenWidth / numCols;
-            double windowHeight = screenHeight / numRows;
+            double newLeft = window.Left;
+            double newTop = window.Top;
+            bool snapped = false;
 
-            // 分配窗口位置
-            for (int i = 0; i < windows.Count; i++)
+            // 是否应该吸附到工作区边缘
+            if (Math.Abs(window.Left - WindowMargin) < SnapThreshold)
             {
-                int row = i / numCols;
-                int col = i % numCols;
+                newLeft = WindowMargin;
+                snapped = true;
+            }
+            else if (Math.Abs(window.Left + window.Width - (workArea.Width - WindowMargin)) < SnapThreshold)
+            {
+                newLeft = workArea.Width - window.Width - WindowMargin;
+                snapped = true;
+            }
 
-                // 计算窗口位置
-                double left = col * windowWidth;
-                double top = row * windowHeight;
+            if (Math.Abs(window.Top - WindowMargin) < SnapThreshold)
+            {
+                newTop = WindowMargin;
+                snapped = true;
+            }
+            else if (Math.Abs(window.Top + window.Height - (workArea.Height - WindowMargin)) < SnapThreshold)
+            {
+                newTop = workArea.Height - window.Height - WindowMargin;
+                snapped = true;
+            }
 
-                // 设置窗口位置和大小
-                windows[i].Left = left;
-                windows[i].Top = top;
-                windows[i].Width = windowWidth;
-                windows[i].Height = windowHeight;
+            //是否应该吸附到其他窗口
+            foreach (var otherWindow in otherWindows)
+            {
+                // 左边缘对齐
+                if (Math.Abs(window.Left - otherWindow.Left) < SnapThreshold)
+                {
+                    newLeft = otherWindow.Left;
+                    snapped = true;
+                }
+                // 右边缘对齐
+                else if (Math.Abs(window.Left + window.Width - (otherWindow.Left + otherWindow.Width)) < SnapThreshold)
+                {
+                    newLeft = otherWindow.Left + otherWindow.Width - window.Width;
+                    snapped = true;
+                }
+                // 右边缘对左边缘
+                else if (Math.Abs(window.Left + window.Width - (otherWindow.Left - WindowMargin)) < SnapThreshold)
+                {
+                    newLeft = otherWindow.Left - window.Width - WindowMargin;
+                    snapped = true;
+                }
+                // 左边缘对右边缘
+                else if (Math.Abs(window.Left - (otherWindow.Left + otherWindow.Width + WindowMargin)) < SnapThreshold)
+                {
+                    newLeft = otherWindow.Left + otherWindow.Width + WindowMargin;
+                    snapped = true;
+                }
+
+                // 上边缘对齐
+                if (Math.Abs(window.Top - otherWindow.Top) < SnapThreshold)
+                {
+                    newTop = otherWindow.Top;
+                    snapped = true;
+                }
+                // 下边缘对齐
+                else if (Math.Abs(window.Top + window.Height - (otherWindow.Top + otherWindow.Height)) < SnapThreshold)
+                {
+                    newTop = otherWindow.Top + otherWindow.Height - window.Height;
+                    snapped = true;
+                }
+                // 下边缘对上边缘
+                else if (Math.Abs(window.Top + window.Height - (otherWindow.Top - WindowMargin)) < SnapThreshold)
+                {
+                    newTop = otherWindow.Top - window.Height - WindowMargin;
+                    snapped = true;
+                }
+                // 上边缘对下边缘
+                else if (Math.Abs(window.Top - (otherWindow.Top + otherWindow.Height + WindowMargin)) < SnapThreshold)
+                {
+                    newTop = otherWindow.Top + otherWindow.Height + WindowMargin;
+                    snapped = true;
+                }
+            }
+
+            // 更新窗口位置
+            if (snapped)
+            {
+                window.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    window.Left = newLeft;
+                    window.Top = newTop;
+
+                    // 保存分区数据
+                    PartitionDataService.Instance.SavePartitionData(window);
+                }));
             }
         }
+
+        /// <summary>
+        /// 窗口大小吸附功能
+        /// </summary>
+        private void SnapWindowSize(DesktopManagerWindow window)
+        {
+            // 获取除当前窗口外的所有可见窗口
+            var otherWindows = managedWindows
+                .Where(w => w != window && w.IsVisible)
+                .ToList();
+
+            if (otherWindows.Count == 0)
+            {
+                return;
+            }
+            var workArea = SystemParameters.WorkArea;
+
+            double newWidth = window.Width;
+            double newHeight = window.Height;
+            bool snapped = false;
+
+            // 是否应该吸附宽度到工作区边缘
+            if (Math.Abs(window.Left + window.Width - (workArea.Width - WindowMargin)) < SnapThreshold)
+            {
+                newWidth = workArea.Width - window.Left - WindowMargin;
+                snapped = true;
+            }
+
+            // 是否应该吸附高度到工作区边缘
+            if (Math.Abs(window.Top + window.Height - (workArea.Height - WindowMargin)) < SnapThreshold)
+            {
+                newHeight = workArea.Height - window.Top - WindowMargin;
+                snapped = true;
+            }
+
+            // 是否应该吸附到其他窗口的边缘
+            foreach (var otherWindow in otherWindows)
+            {
+                // 右边缘吸附到其他窗口左边缘
+                if (Math.Abs(window.Left + window.Width - (otherWindow.Left - WindowMargin)) < SnapThreshold)
+                {
+                    newWidth = otherWindow.Left - window.Left - WindowMargin;
+                    snapped = true;
+                }
+
+                // 下边缘吸附到其他窗口上边缘
+                if (Math.Abs(window.Top + window.Height - (otherWindow.Top - WindowMargin)) < SnapThreshold)
+                {
+                    newHeight = otherWindow.Top - window.Top - WindowMargin;
+                    snapped = true;
+                }
+
+                // 右边缘吸附对齐
+                if (Math.Abs(window.Left + window.Width - (otherWindow.Left + otherWindow.Width)) < SnapThreshold)
+                {
+                    newWidth = otherWindow.Left + otherWindow.Width - window.Left;
+                    snapped = true;
+                }
+
+                // 下边缘吸附对齐
+                if (Math.Abs(window.Top + window.Height - (otherWindow.Top + otherWindow.Height)) < SnapThreshold)
+                {
+                    newHeight = otherWindow.Top + otherWindow.Height - window.Top;
+                    snapped = true;
+                }
+            }
+
+            // 更新窗口大小
+            if (snapped)
+            {
+                window.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    window.Width = newWidth;
+                    window.Height = newHeight;
+
+                    // 保存分区数据
+                    PartitionDataService.Instance.SavePartitionData(window);
+                }));
+            }
+        }
+
     }
 }
