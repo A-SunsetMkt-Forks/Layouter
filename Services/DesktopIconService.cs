@@ -394,7 +394,7 @@ namespace Layouter.Services
         }
 
         /// <summary>
-        /// 显示桌面上的文件图标 - 配合增强版隐藏方法
+        /// 显示桌面上的文件图标
         /// </summary>
         /// <param name="filePath"></param>
         /// <returns></returns>

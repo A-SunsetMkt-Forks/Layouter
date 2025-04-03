@@ -6,47 +6,54 @@ namespace Layouter.Models
 {
     public class DesktopIcon : ObservableObject
     {
-        private string _id;
-        private string _name;
-        private string _iconPath;
-        private Point _position;
-        private Size _size;
-        private bool _isDragging;
+        private string id;
+        private string name;
+        private string iconPath;
+        private Point position;
+        private Size size;
+        private bool isDragging;
+        private IconType iconType = IconType.Normal;
 
         public string Id 
         { 
-            get => _id; 
-            set => SetProperty(ref _id, value); 
+            get => id; 
+            set => SetProperty(ref id, value); 
         }
 
         public string Name 
         { 
-            get => _name; 
-            set => SetProperty(ref _name, value); 
+            get => name; 
+            set => SetProperty(ref name, value); 
         }
 
         public string IconPath 
         { 
-            get => _iconPath; 
-            set => SetProperty(ref _iconPath, value); 
+            get => iconPath; 
+            set => SetProperty(ref iconPath, value); 
         }
 
         public Point Position 
         { 
-            get => _position; 
-            set => SetProperty(ref _position, value); 
+            get => position; 
+            set => SetProperty(ref position, value); 
         }
 
         public Size Size 
         { 
-            get => _size; 
-            set => SetProperty(ref _size, value); 
+            get => size; 
+            set => SetProperty(ref size, value); 
         }
         
         public bool IsDragging
         {
-            get => _isDragging;
-            set => SetProperty(ref _isDragging, value);
+            get => isDragging;
+            set => SetProperty(ref isDragging, value);
+        }
+
+        public IconType IconType
+        {
+            get => iconType;
+            set => SetProperty(ref iconType, value);
         }
 
         public DesktopIcon()
@@ -63,9 +70,15 @@ namespace Layouter.Models
                 Name = this.Name,
                 IconPath = this.IconPath,
                 Position = this.Position,
-                Size = this.Size
-                // 注意：不复制Id，让克隆对象拥有新的Id
+                Size = this.Size,
+                IconType = this.IconType
             };
         }
+    }
+
+    public enum IconType
+    {
+        Normal = 0,
+        Shell
     }
 }
