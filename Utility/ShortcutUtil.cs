@@ -98,7 +98,7 @@ namespace Layouter.Utility
         }
 
 
-        private static bool IsShortcutPath(string shortcutPath)
+        public static bool IsShortcutPath(string shortcutPath)
         {
             string path = shortcutPath.ToLower();
             if (path.EndsWith(".lnk") || path.EndsWith(".url"))
