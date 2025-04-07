@@ -553,14 +553,29 @@ namespace Layouter.Views
                         }
 
                         // 创建新的图标对象
-                        newIcon = new DesktopIcon
+                        if (ShortCutUtil.IsShortcutPath(filePath))
                         {
-                            Id = Guid.NewGuid().ToString(),
-                            Name = Path.GetFileNameWithoutExtension(filePath),
-                            IconPath = DesktopIconService.Instance.CombineHiddenPathWithIconPath(filePath),
-                            Position = new Point(x, y),
-                            Size = new Size(64, 64)
-                        };
+                            newIcon = new DesktopIcon
+                            {
+                                Id = Guid.NewGuid().ToString(),
+                                Name = Path.GetFileNameWithoutExtension(filePath),
+                                IconPath = DesktopIconService.Instance.CombineHiddenPathWithIconPath(filePath),
+                                Position = new Point(x, y),
+                                Size = new Size(64, 64)
+                            };
+                        }
+                        else
+                        {
+                            newIcon = new DesktopIcon
+                            {
+                                Id = Guid.NewGuid().ToString(),
+                                Name = ShellUtil.GetSpecialFolderDisplayName(filePath),
+                                IconPath = filePath,
+                                Position = new Point(x, y),
+                                Size = new Size(64, 64),
+                                IconType = IconType.Shell
+                            };
+                        }
 
                         if (flag)
                         {
@@ -818,6 +833,10 @@ namespace Layouter.Views
                 {
                     // 使用Windows默认处理方式打开文件
                     Win32.ShellExecute(IntPtr.Zero, "open", path, "", Path.GetDirectoryName(path), Win32.SW_SHOWNORMAL);
+                }
+                else if (!ShortCutUtil.IsShortcutPath(path))
+                {
+                    ShellUtil.OpenSpecialFolder(path);
                 }
             }
             catch (Exception ex)
