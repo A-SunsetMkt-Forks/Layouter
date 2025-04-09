@@ -9,27 +9,27 @@ namespace Layouter.Models
 {
     public class IconPartition : ObservableObject
     {
-        private string _name;
-        private Rect _bounds;
-        private bool _autoArrange = true;
-        private Size _gridSize = new(64, 64);
-        private double _padding = 10;
-        private ObservableCollection<DesktopIcon> _icons = new();
+        private string name;
+        private Rect bounds;
+        private bool autoArrange = true;
+        private Size gridSize = new(64, 64);
+        private double padding = 10;
+        private ObservableCollection<DesktopIcon> icons = new ObservableCollection<DesktopIcon>();
 
         public string Id { get; } = Guid.NewGuid().ToString();
 
         public string Name
         {
-            get => _name;
-            set => SetProperty(ref _name, value);
+            get => name;
+            set => SetProperty(ref name, value);
         }
 
         public Rect Bounds
         {
-            get => _bounds;
+            get => bounds;
             set
             {
-                if (SetProperty(ref _bounds, value) && AutoArrange)
+                if (SetProperty(ref bounds, value) && AutoArrange)
                 {
                     ArrangeIcons();
                 }
@@ -38,16 +38,16 @@ namespace Layouter.Models
 
         public ObservableCollection<DesktopIcon> Icons
         {
-            get => _icons;
-            private set => SetProperty(ref _icons, value);
+            get => icons;
+            private set => SetProperty(ref icons, value);
         }
 
         public bool AutoArrange
         {
-            get => _autoArrange;
+            get => autoArrange;
             set
             {
-                if (SetProperty(ref _autoArrange, value) && value)
+                if (SetProperty(ref autoArrange, value) && value)
                 {
                     ArrangeIcons();
                 }
@@ -56,14 +56,14 @@ namespace Layouter.Models
 
         public Size GridSize
         {
-            get => _gridSize;
-            set => SetProperty(ref _gridSize, value);
+            get => gridSize;
+            set => SetProperty(ref gridSize, value);
         }
 
         public double Padding
         {
-            get => _padding;
-            set => SetProperty(ref _padding, value);
+            get => padding;
+            set => SetProperty(ref padding, value);
         }
 
         public IconPartition()
