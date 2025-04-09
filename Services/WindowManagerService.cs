@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
+using Layouter.ViewModels;
 using Layouter.Views;
 
 namespace Layouter.Services
@@ -427,6 +429,38 @@ namespace Layouter.Services
                     // 保存分区数据
                     PartitionDataService.Instance.SavePartitionData(window);
                 }));
+            }
+        }
+
+        public void ApplySettingsToAllWindows(DesktopManagerViewModel sourceViewModel)
+        {
+            try
+            {
+                foreach (var window in GetAllWindows())
+                {
+                    var viewModel = window.DataContext as DesktopManagerViewModel;
+                    if (viewModel != null && viewModel != sourceViewModel)
+                    {
+                        // 复制设置
+                        viewModel.TitleForeground = sourceViewModel.TitleForeground.Clone();
+                        viewModel.TitleBackground = sourceViewModel.TitleBackground.Clone();
+                        viewModel.TitleFont = new FontFamily(sourceViewModel.TitleFont.Source);
+                        viewModel.TitleAlignment = sourceViewModel.TitleAlignment;
+                        viewModel.ContentBackground = sourceViewModel.ContentBackground.Clone();
+                        viewModel.Opacity = sourceViewModel.Opacity;
+                        viewModel.IconSize = sourceViewModel.IconSize;
+
+                        // 保存每个窗口的设置
+                        PartitionDataService.Instance.SavePartitionData(window);
+                    }
+                }
+
+                // 保存全局设置
+                PartitionSettingsService.Instance.SaveSettings(sourceViewModel, true);
+            }
+            catch (Exception ex)
+            {
+                Log.Information($"应用全局设置时出错: {ex.Message}");
             }
         }
 
