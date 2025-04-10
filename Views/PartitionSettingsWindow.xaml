@@ -1,0 +1,177 @@
+<Window x:Class="Layouter.Views.PartitionSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Layouter.Views"
+        xmlns:models="clr-namespace:Layouter.Models"
+        mc:Ignorable="d"
+        Title="分区设置" Height="500" Width="400" 
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+    
+    <Window.Resources>
+        <Style TargetType="GroupBox">
+            <Setter Property="Margin" Value="5" />
+            <Setter Property="Padding" Value="5" />
+        </Style>
+        <Style TargetType="Label">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,5" />
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Margin" Value="5" />
+            <Setter Property="MinWidth" Value="120" />
+        </Style>
+        <Style TargetType="Slider">
+            <Setter Property="Margin" Value="5" />
+            <Setter Property="MinWidth" Value="120" />
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Margin" Value="5" />
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="MinWidth" Value="80" />
+        </Style>
+    </Window.Resources>
+    
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <CheckBox x:Name="ApplyToAllCheckBox" Content="应用到所有分区窗口" Margin="5,10" />
+                
+                <!-- 标题栏设置 -->
+                <GroupBox Header="标题栏设置">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        
+                        <!-- 标题栏前景色 -->
+                        <Label Grid.Row="0" Grid.Column="0" Content="前景色:" />
+                        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
+                            <Rectangle x:Name="TitleForegroundPreview" Width="24" Height="24" Margin="5" Stroke="Black" StrokeThickness="1" />
+                            <Button x:Name="TitleForegroundButton" Content="选择颜色" Click="TitleForegroundButton_Click" />
+                        </StackPanel>
+                        
+                        <!-- 标题栏背景色 -->
+                        <Label Grid.Row="1" Grid.Column="0" Content="背景色:" />
+                        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
+                            <Rectangle x:Name="TitleBackgroundPreview" Width="24" Height="24" Margin="5" Stroke="Black" StrokeThickness="1" />
+                            <Button x:Name="TitleBackgroundButton" Content="选择颜色" Click="TitleBackgroundButton_Click" />
+                        </StackPanel>
+                        
+                        <!-- 标题栏字体 -->
+                        <Label Grid.Row="2" Grid.Column="0" Content="字体:" />
+                        <ComboBox Grid.Row="2" Grid.Column="1" x:Name="TitleFontComboBox" 
+                                  ItemsSource="{Binding Source={x:Static Fonts.SystemFontFamilies}}"
+                                  DisplayMemberPath="Source"
+                                  SelectionChanged="TitleFontComboBox_SelectionChanged" />
+                        
+                        <!-- 标题栏文本对齐 -->
+                        <Label Grid.Row="3" Grid.Column="0" Content="文本对齐:" />
+                        <ComboBox Grid.Row="3" Grid.Column="1" x:Name="TitleAlignmentComboBox" 
+                                  SelectionChanged="TitleAlignmentComboBox_SelectionChanged">
+                            <ComboBoxItem Content="左对齐" Tag="Left" />
+                            <ComboBoxItem Content="居中" Tag="Center" />
+                            <ComboBoxItem Content="右对齐" Tag="Right" />
+                        </ComboBox>
+                    </Grid>
+                </GroupBox>
+                
+                <!-- 内容区设置 -->
+                <GroupBox Header="内容区设置">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        
+                        <!-- 内容区背景色 -->
+                        <Label Grid.Row="0" Grid.Column="0" Content="背景色:" />
+                        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
+                            <Rectangle x:Name="ContentBackgroundPreview" Width="24" Height="24" Margin="5" Stroke="Black" StrokeThickness="1" />
+                            <Button x:Name="ContentBackgroundButton" Content="选择颜色" Click="ContentBackgroundButton_Click" />
+                        </StackPanel>
+                        
+                        <!-- 窗口透明度 -->
+                        <Label Grid.Row="1" Grid.Column="0" Content="透明度:" />
+                        <Grid Grid.Row="1" Grid.Column="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Slider x:Name="OpacitySlider" Minimum="0.3" Maximum="1.0" Value="0.95" 
+                                    TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                    ValueChanged="OpacitySlider_ValueChanged" />
+                            <TextBlock Grid.Column="1" Text="{Binding ElementName=OpacitySlider, Path=Value, StringFormat={}{0:P0}}" 
+                                       VerticalAlignment="Center" Margin="5,0" />
+                        </Grid>
+                        
+                        <!-- 图标大小 -->
+                        <Label Grid.Row="2" Grid.Column="0" Content="图标大小:" />
+                        <ComboBox Grid.Row="2" Grid.Column="1" x:Name="IconSizeComboBox" 
+                                  SelectionChanged="IconSizeComboBox_SelectionChanged">
+                            <ComboBoxItem Content="小 (32x32)" Tag="Small" />
+                            <ComboBoxItem Content="中 (48x48)" Tag="Medium" />
+                            <ComboBoxItem Content="大 (64x64)" Tag="Large" />
+                        </ComboBox>
+                    </Grid>
+                </GroupBox>
+                
+                <!-- 预览区域 -->
+                <GroupBox Header="预览">
+                    <Border x:Name="PreviewBorder" Height="150" Background="{Binding ElementName=ContentBackgroundPreview, Path=Fill}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            
+                            <!-- 预览标题栏 -->
+                            <Border Grid.Row="0" Background="{Binding ElementName=TitleBackgroundPreview, Path=Fill}" 
+                                    Height="30" Padding="10,0">
+                                <TextBlock Text="分区标题预览" VerticalAlignment="Center" 
+                                           Foreground="{Binding ElementName=TitleForegroundPreview, Path=Fill}"
+                                           FontFamily="{Binding ElementName=TitleFontComboBox, Path=SelectedItem}"
+                                           HorizontalAlignment="{Binding ElementName=TitleAlignmentComboBox, Path=SelectedItem.Tag}" />
+                            </Border>
+                            
+                            <!-- 预览内容区 -->
+                            <WrapPanel Grid.Row="1" Margin="10">
+                                <Border Width="32" Height="32" Background="LightGray" Margin="5" 
+                                        Visibility="{Binding ElementName=IconSizeComboBox, Path=SelectedItem.Tag, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Small}" />
+                                <Border Width="48" Height="48" Background="LightGray" Margin="5" 
+                                        Visibility="{Binding ElementName=IconSizeComboBox, Path=SelectedItem.Tag, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Medium}" />
+                                <Border Width="64" Height="64" Background="LightGray" Margin="5" 
+                                        Visibility="{Binding ElementName=IconSizeComboBox, Path=SelectedItem.Tag, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=Large}" />
+                            </WrapPanel>
+                        </Grid>
+                    </Border>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- 按钮区域 -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button x:Name="ResetButton" Content="重置" Click="ResetButton_Click" />
+            <Button x:Name="SaveButton" Content="保存" Click="SaveButton_Click" IsDefault="True" />
+            <Button x:Name="CancelButton" Content="取消" Click="CancelButton_Click" IsCancel="True" />
+        </StackPanel>
+    </Grid>
+</Window>
