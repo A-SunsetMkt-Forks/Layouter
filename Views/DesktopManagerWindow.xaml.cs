@@ -69,6 +69,8 @@ namespace Layouter.Views
 
             // 加载分区数据
             LoadPartitionData();
+            // 加载分区设置
+            LoadPartitionSettings();
         }
 
         private void DesktopManagerWindow_PreviewDragOver(object sender, DragEventArgs e)
@@ -228,6 +230,30 @@ namespace Layouter.Views
             catch (Exception ex)
             {
                 Log.Information($"创建新分区窗口时出错: {ex.Message}");
+            }
+        }
+
+
+        private void PartitionSettings_Click(object sender, RoutedEventArgs e)
+        {
+            SettingsPopup.IsOpen = false;
+
+            try
+            {
+                var settingsWindow = new PartitionSettingsWindow(vm, false);
+                settingsWindow.Owner = this;
+                settingsWindow.ShowDialog();
+
+                // 如果设置已保存，更新UI
+                if (settingsWindow.DialogResult == true)
+                {
+                    // 保存分区数据
+                    SavePartitionData();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Information($"打开分区设置窗口时出错: {ex.Message}");
             }
         }
 
@@ -808,15 +834,8 @@ namespace Layouter.Views
                 //获取在DesktopManagerWindow_MouseRightButtonDown事件中设置的Tag
                 if (contextMenu?.Tag is DesktopIcon icon)
                 {
-                    // 使用rundll32.exe打开属性对话框
-                    string command = $"rundll32.exe shell32.dll,ShellExec_RunDLL properties \"{icon.IconPath}\"";
 
-                    Process process = new Process();
-                    process.StartInfo.FileName = "cmd.exe";
-                    process.StartInfo.Arguments = $"/c {command}";
-                    process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.CreateNoWindow = true;
-                    process.Start();
+                    ShellUtil.ShowProperties(icon.IconPath);
                 }
             }
             catch (Exception ex)
@@ -847,240 +866,17 @@ namespace Layouter.Views
 
         #endregion
 
-        /// <summary>
-        /// 处理图标已被拖放到其他分区的通知
-        /// </summary>
-        //public void HandleIconMovedToOtherPartition(string iconId)
-        //{
-        //    try
-        //    {
-        //        var viewModel = this.DataContext as DesktopManagerViewModel;
-        //        var icon = viewModel?.GetIconById(iconId);
-
-        //        if (icon != null)
-        //        {
-        //            Log.Information($"收到通知：图标已被移动到其他分区，从当前分区移除: {icon.Name}");
-
-        //            // 从当前分区中移除图标
-        //            viewModel.RemoveIcon(icon);
-
-        //            // 保存更改
-        //            SavePartitionData();
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Log.Information($"处理图标移动通知时出错: {ex.Message}");
-        //    }
-        //}
-
-        //private void AddItemToPartition(string path, string displayName = null, ImageSource iconSource = null)
-        //{
-        //    try
-        //    {
-        //        //// 检查是否已存在相同路径的项目
-        //        //if (PartitionItems.Any(item => item.Path == path))
-        //        //{
-        //        //    return;
-        //        //}
-
-        //        //var partitionItem = new PartitionItemViewModel
-        //        //{
-        //        //    Path = path,
-        //        //    Name = displayName ?? Path.GetFileNameWithoutExtension(path)
-        //        //};
-
-        //        //// 如果已提供图标，则使用它
-        //        //if (iconSource != null)
-        //        //{
-        //        //    partitionItem.IconSource = iconSource;
-        //        //}
-        //        //else
-        //        //{
-        //        //    // 否则尝试加载图标
-        //        //    try
-        //        //    {
-        //        //        if (File.Exists(path))
-        //        //        {
-        //        //            if (Path.GetExtension(path).ToLower() == ".lnk")
-        //        //            {
-        //        //                // 处理快捷方式
-        //        //                var shortcutInfo = ShortcutService.ResolveShortcut(path);
-        //        //                partitionItem.Path = shortcutInfo.TargetPath;
-        //        //                partitionItem.Arguments = shortcutInfo.Arguments;
-        //        //                partitionItem.WorkingDirectory = shortcutInfo.WorkingDirectory;
-
-        //        //                // 使用无箭头图标
-        //        //                partitionItem.IconSource = ShortcutService.GetIconWithoutShortcutOverlay(shortcutInfo.TargetPath).ToImageSource();
-        //        //            }
-        //        //            else
-        //        //            {
-        //        //                // 普通文件
-        //        //                partitionItem.IconSource = IconHelper.GetFileIcon(path).ToImageSource();
-        //        //            }
-        //        //        }
-        //        //        else if (Directory.Exists(path))
-        //        //        {
-        //        //            // 文件夹
-        //        //            partitionItem.IconSource = IconHelper.GetFolderIcon(path).ToImageSource();
-        //        //        }
-        //        //        else if (path.StartsWith("::")) // 特殊Shell项目
-        //        //        {
-        //        //            // 尝试获取Shell项目图标
-        //        //            partitionItem.IconSource = ShellItemHelper.GetShellItemIcon(path).ToImageSource();
-        //        //        }
-        //        //    }
-        //        //    catch (Exception ex)
-        //        //    {
-        //        //        Log.Error($"加载图标时出错: {ex.Message}");
-        //        //    }
-        //        //}
-
-        //        //PartitionItems.Add(partitionItem);
-        //        //SavePartitionData();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Log.Error($"添加项目到分区时出错: {ex.Message}");
-        //    }
-        //}
-
-
-        //private void DesktopManagerWindow_Drop(object sender, DragEventArgs e)
-        //{
-        //    try
-        //    {
-        //        // 获取拖放的数据对象
-        //        var data = e.Data;
-        //        DesktopIcon newIcon = null;
-
-        //        // 在拖放结束时获取鼠标坐标 - 相对于窗口
-        //        Point dropPoint = e.GetPosition(this);
-
-        //        // 放置点坐标 - 以Panel为相对坐标系
-        //        double x = dropPoint.X;
-        //        double y = dropPoint.Y;
-
-        //        // 检查是否是从桌面拖过来的文件
-        //        if (data.GetDataPresent(DataFormats.FileDrop))
-        //        {
-        //            var files = data.GetData(DataFormats.FileDrop) as string[];
-
-        //            if (files != null && files.Length > 0)
-        //            {
-        //                string filePath = files[0]; // 取第一个文件
-
-        //                // 检查是否已经在这个分区中
-        //                var viewModel = DataContext as DesktopManagerViewModel;
-        //                if (viewModel.Icons.Any(i => i.IconPath.Equals(filePath, StringComparison.OrdinalIgnoreCase)))
-        //                {
-        //                    return; // 不做任何操作，也不显示消息框
-        //                }
-
-        //                // 创建新的图标对象
-        //                newIcon = new DesktopIcon
-        //                {
-        //                    Id = Guid.NewGuid().ToString(),
-        //                    Name = Path.GetFileNameWithoutExtension(filePath),
-        //                    IconPath = filePath,
-        //                    Position = new Point(x, y),
-        //                    Size = new Size(64, 64)
-        //                };
-        //            }
-        //        }
-        //        // 如果是从其他分区拖过来的
-        //        else if (data.GetDataPresent("DraggedIconSource") && data.GetData("DraggedIconSource").ToString() == "Partition")
-        //        {
-        //            // 获取源分区窗口句柄
-        //            IntPtr sourceWindowHandle = IntPtr.Zero;
-        //            if (data.GetDataPresent("SourceWindowHandle"))
-        //            {
-        //                sourceWindowHandle = (IntPtr)data.GetData("SourceWindowHandle");
-        //            }
-
-        //            // 当前窗口句柄
-        //            IntPtr currentWindowHandle = new WindowInteropHelper(this).Handle;
-
-        //            // 如果是从其他分区窗口拖过来的
-        //            if (sourceWindowHandle != IntPtr.Zero && sourceWindowHandle != currentWindowHandle)
-        //            {
-        //                string iconId = data.GetData("IconId").ToString();
-        //                string iconName = data.GetData("IconName").ToString();
-        //                string iconPath = data.GetData("IconPath").ToString();
-
-        //                // 检查是否已经在这个分区中 - 如果已存在则静默返回，不提示
-        //                var viewModel = DataContext as DesktopManagerViewModel;
-        //                if (viewModel.Icons.Any(i => i.IconPath.Equals(iconPath, StringComparison.OrdinalIgnoreCase)))
-        //                {
-        //                    return; // 不做任何操作，也不显示消息框
-        //                }
-
-        //                // 创建新的图标，并设置其位置为拖放点
-        //                newIcon = new DesktopIcon
-        //                {
-        //                    Id = iconId,  // 保持相同的ID
-        //                    Name = iconName,
-        //                    IconPath = iconPath,
-        //                    Position = new Point(x, y),
-        //                    Size = new Size(64, 64)
-        //                };
-
-        //                // 通知源窗口图标已被接收，可以从源分区移除
-        //                foreach (var window in Application.Current.Windows)
-        //                {
-        //                    if (window is DesktopManagerWindow desktopManager)
-        //                    {
-        //                        IntPtr windowHandle = new WindowInteropHelper(desktopManager).Handle;
-        //                        if (windowHandle == sourceWindowHandle)
-        //                        {
-        //                            // 找到源窗口，通知其移除图标
-        //                            desktopManager.HandleIconMovedToOtherPartition(iconId);
-        //                            break;
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //        }
-        //        else if (e.Data.GetDataPresent("Shell IDList Array"))
-        //        {
-
-        //            // 获取拖放的Shell项目
-        //            var shellItems = ShellUtil.GetShellItemsFromDataObject(e.Data);
-        //            foreach (var item in shellItems)
-        //            {
-        //                AddItemToPartition(item.Path, item.DisplayName, item.IconSource);
-        //            }
-        //        }
-
-        //        // 如果成功创建了新图标，添加到当前分区
-        //        if (newIcon != null)
-        //        {
-        //            var viewModel = DataContext as DesktopManagerViewModel;
-        //            viewModel?.AddIcon(newIcon);
-
-        //            // 保存分区数据
-        //            SavePartitionData();
-
-        //            // 如果是从另一个分区拖过来的图标，执行一次图标对齐
-        //            if (data.GetDataPresent("DraggedIconSource") && data.GetData("DraggedIconSource").ToString() == "Partition")
-        //            {
-        //                // 延迟执行排列，确保新图标已经加入集合
-        //                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-        //                {
-        //                    viewModel?.ArrangeIcons();
-        //                    Log.Information("已在目标分区执行图标对齐");
-        //                }));
-        //            }
-
-        //            e.Handled = true;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Log.Information($"处理拖放时出错: {ex.Message}\n{ex.StackTrace}");
-        //    }
-        //}
-
-
+        private void LoadPartitionSettings()
+        {
+            try
+            {
+                // 加载此分区窗口的特定设置
+                PartitionSettingsService.Instance.LoadSettings(vm, false);
+            }
+            catch (Exception ex)
+            {
+                Log.Information($"加载分区设置时出错: {ex.Message}");
+            }
+        }
     }
 }
