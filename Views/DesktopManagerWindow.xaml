@@ -66,6 +66,7 @@
         <Popup x:Name="SettingsPopup" StaysOpen="False" PlacementTarget="{Binding ElementName=SettingsButton}" Placement="Bottom">
             <Border Background="White" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="3">
                 <StackPanel>
+                    <Button Content="窗口设置" Click="PartitionSettings_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
                     <Button Content="删除窗口" Click="DeletePartition_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
                     <Button Content="修改背景颜色" Click="ChangeBackground_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
                     <Button Content="对齐图标" Click="AutoArrange_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
