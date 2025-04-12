@@ -432,37 +432,60 @@ namespace Layouter.Services
             }
         }
 
-        public void ApplySettingsToAllWindows(DesktopManagerViewModel sourceViewModel)
+        /// <summary>
+        /// 应用全局样式到所有窗口
+        /// </summary>
+        public void ApplyGlobalSettingsToAllWindows()
         {
             try
             {
+                // 加载全局设置
+                var globalSettings = PartitionSettingsService.Instance.LoadGlobalSettings();
+
+                // 如果未启用全局样式，直接返回
+                if (!globalSettings.EnableGlobalStyle)
+                {
+                    return;
+                }
+
+                // 创建临时ViewModel用于传递设置
+                var tempViewModel = new DesktopManagerViewModel
+                {
+                    TitleForeground = new SolidColorBrush(globalSettings.TitleForeground),
+                    TitleBackground = new SolidColorBrush(globalSettings.TitleBackground),
+                    TitleFont = new FontFamily(globalSettings.TitleFont),
+                    TitleAlignment = globalSettings.TitleAlignment,
+                    ContentBackground = new SolidColorBrush(globalSettings.ContentBackground),
+                    Opacity = globalSettings.Opacity,
+                    IconSize = globalSettings.IconSize
+                };
+
+                // 应用到所有窗口
                 foreach (var window in GetAllWindows())
                 {
                     var viewModel = window.DataContext as DesktopManagerViewModel;
-                    if (viewModel != null && viewModel != sourceViewModel)
+                    if (viewModel != null)
                     {
                         // 复制设置
-                        viewModel.TitleForeground = sourceViewModel.TitleForeground.Clone();
-                        viewModel.TitleBackground = sourceViewModel.TitleBackground.Clone();
-                        viewModel.TitleFont = new FontFamily(sourceViewModel.TitleFont.Source);
-                        viewModel.TitleAlignment = sourceViewModel.TitleAlignment;
-                        viewModel.ContentBackground = sourceViewModel.ContentBackground.Clone();
-                        viewModel.Opacity = sourceViewModel.Opacity;
-                        viewModel.IconSize = sourceViewModel.IconSize;
+                        viewModel.TitleForeground = tempViewModel.TitleForeground.Clone();
+                        viewModel.TitleBackground = tempViewModel.TitleBackground.Clone();
+                        viewModel.TitleFont = new FontFamily(tempViewModel.TitleFont.Source);
+                        viewModel.TitleAlignment = tempViewModel.TitleAlignment;
+                        viewModel.ContentBackground = tempViewModel.ContentBackground.Clone();
+                        viewModel.Opacity = tempViewModel.Opacity;
+                        viewModel.IconSize = tempViewModel.IconSize;
 
-                        // 保存每个窗口的设置
-                        PartitionDataService.Instance.SavePartitionData(window);
+                        // 更新图标大小
+                        (window as DesktopManagerWindow)?.UpdateIconSizes();
                     }
                 }
 
-                // 保存全局设置
-                PartitionSettingsService.Instance.SaveSettings(sourceViewModel, true);
+                Log.Information("已应用全局样式设置到所有窗口");
             }
             catch (Exception ex)
             {
-                Log.Information($"应用全局设置时出错: {ex.Message}");
+                Log.Information($"应用全局样式设置到所有窗口时出错: {ex.Message}");
             }
         }
-
     }
 }
