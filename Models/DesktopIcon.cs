@@ -10,7 +10,7 @@ namespace Layouter.Models
         private string name;
         private string iconPath;
         private Point position;
-        private Size size;
+        private Size size = new Size(48, 48);
         private bool isDragging;
         private IconType iconType = IconType.Normal;
 
@@ -60,7 +60,7 @@ namespace Layouter.Models
         {
             // 生成唯一ID
             Id = Guid.NewGuid().ToString();
-            Size = new Size(64, 64); // 默认大小
+            Size = new Size(48, 48); // 默认大小
         }
 
         public DesktopIcon Clone()
