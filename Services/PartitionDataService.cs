@@ -302,6 +302,7 @@ namespace Layouter.Services
                     {
                         Log.Information($"为窗口 {window.GetHashCode()} 加载配置: {windowId}");
                         LoadPartitionData(window, windowId);
+                        window.Sync(window);
                         window.Show();
                     }
                     else

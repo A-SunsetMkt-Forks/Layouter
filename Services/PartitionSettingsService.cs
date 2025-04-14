@@ -11,12 +11,12 @@ namespace Layouter.Services
 {
     public class PartitionSettingsService
     {
-        private static PartitionSettingsService _instance;
-        public static PartitionSettingsService Instance => _instance ?? (_instance = new PartitionSettingsService());
-        
-        private string _styleFilePath;
-        private string _globalStyleFilePath;
-        
+        private static PartitionSettingsService instance;
+        public static PartitionSettingsService Instance => instance ?? (instance = new PartitionSettingsService());
+
+        private string styleFilePath;
+        private string globalStyleFilePath;
+
         private PartitionSettingsService()
         {
             string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Layouter");
@@ -25,23 +25,22 @@ namespace Layouter.Services
             {
                 Directory.CreateDirectory(appDataPath);
             }
-            
-            _styleFilePath = Path.Combine(appDataPath, "partitionStyle.json");
-            _globalStyleFilePath = Path.Combine(appDataPath, "partitionStyle_global.json");
+
+            styleFilePath = Path.Combine(appDataPath, "partitionStyle.json");
+            globalStyleFilePath = Path.Combine(appDataPath, "partitionStyle_global.json");
         }
 
-        public void SaveGlobalSettings(DesktopManagerViewModel viewModel, bool enableGlobalStyle = true)
+        public void SaveGlobalSettings(DesktopManagerViewModel viewModel)
         {
             try
             {
                 var settings = new GlobalPartitionSettings
                 {
-                    EnableGlobalStyle = enableGlobalStyle,
                     TitleForeground = viewModel.TitleForeground.Color,
                     TitleBackground = viewModel.TitleBackground.Color,
                     TitleFont = viewModel.TitleFont.Source,
+                    TitleFontSize = viewModel.TitleFontSize,
                     TitleAlignment = viewModel.TitleAlignment,
-                    ContentBackground = viewModel.ContentBackground.Color,
                     Opacity = viewModel.Opacity,
                     IconSize = viewModel.IconSize
                 };
@@ -49,7 +48,7 @@ namespace Layouter.Services
                 string json = JsonConvert.SerializeObject(settings, Formatting.Indented,
                     new JsonConverter[] { new StringEnumConverter() });
 
-                File.WriteAllText(_globalStyleFilePath, json);
+                File.WriteAllText(globalStyleFilePath, json);
                 Log.Information("已保存全局样式配置");
             }
             catch (Exception ex)
@@ -59,21 +58,29 @@ namespace Layouter.Services
         }
 
         // 保存单个窗口的样式配置
-        public void SaveWindowSettings(string windowId, DesktopManagerViewModel viewModel)
+        public void SaveWindowSettings(DesktopManagerViewModel viewModel)
         {
+
+            if (viewModel == null || string.IsNullOrEmpty(viewModel.windowId))
+            {
+                return;
+            }
+
             try
             {
                 // 读取现有的所有窗口配置
                 var allSettings = LoadAllWindowSettings();
 
+                string id = viewModel.windowId;
+
                 // 更新或添加当前窗口的配置
-                allSettings[windowId] = new PartitionSettings
+                allSettings[id] = new PartitionSettings
                 {
                     TitleForeground = viewModel.TitleForeground.Color,
                     TitleBackground = viewModel.TitleBackground.Color,
                     TitleFont = viewModel.TitleFont.Source,
+                    TitleFontSize = viewModel.TitleFontSize,
                     TitleAlignment = viewModel.TitleAlignment,
-                    ContentBackground = viewModel.ContentBackground.Color,
                     Opacity = viewModel.Opacity,
                     IconSize = viewModel.IconSize
                 };
@@ -82,8 +89,8 @@ namespace Layouter.Services
                 string json = JsonConvert.SerializeObject(allSettings, Formatting.Indented,
                     new JsonConverter[] { new StringEnumConverter() });
 
-                File.WriteAllText(_styleFilePath, json);
-                Log.Information($"已保存窗口 {windowId} 的样式配置");
+                File.WriteAllText(styleFilePath, json);
+                Log.Information($"已保存窗口 {id} 的样式配置");
             }
             catch (Exception ex)
             {
@@ -95,7 +102,7 @@ namespace Layouter.Services
         {
             try
             {
-                if (!File.Exists(_globalStyleFilePath))
+                if (!File.Exists(globalStyleFilePath))
                 {
                     // 如果全局配置文件不存在，创建默认配置
                     var defaultSettings = GetDefaultGlobalSettings();
@@ -104,16 +111,16 @@ namespace Layouter.Services
                         TitleForeground = new SolidColorBrush(defaultSettings.TitleForeground),
                         TitleBackground = new SolidColorBrush(defaultSettings.TitleBackground),
                         TitleFont = new FontFamily(defaultSettings.TitleFont),
+                        TitleFontSize = defaultSettings.TitleFontSize,
                         TitleAlignment = defaultSettings.TitleAlignment,
-                        ContentBackground = new SolidColorBrush(defaultSettings.ContentBackground),
                         Opacity = defaultSettings.Opacity,
                         IconSize = defaultSettings.IconSize
-                    }, defaultSettings.EnableGlobalStyle);
+                    });
 
                     return defaultSettings;
                 }
 
-                string json = File.ReadAllText(_globalStyleFilePath);
+                string json = File.ReadAllText(globalStyleFilePath);
                 var settings = JsonConvert.DeserializeObject<GlobalPartitionSettings>(json);
 
                 return settings ?? GetDefaultGlobalSettings();
@@ -139,13 +146,13 @@ namespace Layouter.Services
                 }
 
                 // 否则尝试加载窗口特定的样式配置
-                if (!File.Exists(_styleFilePath))
+                if (!File.Exists(styleFilePath))
                 {
                     // 如果个性化配置文件不存在，返回全局配置
                     return globalSettings;
                 }
 
-                string json = File.ReadAllText(_styleFilePath);
+                string json = File.ReadAllText(styleFilePath);
                 var allSettings = JsonConvert.DeserializeObject<Dictionary<string, PartitionSettings>>(json);
 
                 // 如果找到窗口特定的配置，返回它
@@ -169,12 +176,12 @@ namespace Layouter.Services
         {
             try
             {
-                if (!File.Exists(_styleFilePath))
+                if (!File.Exists(styleFilePath))
                 {
                     return new Dictionary<string, PartitionSettings>();
                 }
 
-                string json = File.ReadAllText(_styleFilePath);
+                string json = File.ReadAllText(styleFilePath);
                 var settings = JsonConvert.DeserializeObject<Dictionary<string, PartitionSettings>>(json);
 
                 return settings ?? new Dictionary<string, PartitionSettings>();
@@ -199,7 +206,7 @@ namespace Layouter.Services
                 viewModel.TitleBackground = new SolidColorBrush(settings.TitleBackground);
                 viewModel.TitleFont = new FontFamily(settings.TitleFont);
                 viewModel.TitleAlignment = settings.TitleAlignment;
-                viewModel.ContentBackground = new SolidColorBrush(settings.ContentBackground);
+                viewModel.TitleFontSize = settings.TitleFontSize;
                 viewModel.Opacity = settings.Opacity;
                 viewModel.IconSize = settings.IconSize;
 
@@ -221,7 +228,7 @@ namespace Layouter.Services
                 TitleBackground = Colors.DodgerBlue,
                 TitleFont = "Microsoft YaHei",
                 TitleAlignment = HorizontalAlignment.Left,
-                ContentBackground = Colors.WhiteSmoke,
+                TitleFontSize = 14d,
                 Opacity = 0.95,
                 IconSize = IconSize.Medium
             };
@@ -231,12 +238,11 @@ namespace Layouter.Services
         {
             if (isGlobal)
             {
-                SaveGlobalSettings(viewModel, true);
+                SaveGlobalSettings(viewModel);
             }
             else
             {
-                // 由于没有windowId，这里只能保存到全局配置
-                SaveGlobalSettings(viewModel, false);
+                SaveWindowSettings(viewModel);
             }
         }
 
@@ -253,7 +259,7 @@ namespace Layouter.Services
                     viewModel.TitleBackground = new SolidColorBrush(settings.TitleBackground);
                     viewModel.TitleFont = new FontFamily(settings.TitleFont);
                     viewModel.TitleAlignment = settings.TitleAlignment;
-                    viewModel.ContentBackground = new SolidColorBrush(settings.ContentBackground);
+                    viewModel.TitleFontSize = settings.TitleFontSize;
                     viewModel.Opacity = settings.Opacity;
                     viewModel.IconSize = settings.IconSize;
                 }
@@ -266,7 +272,7 @@ namespace Layouter.Services
                     viewModel.TitleBackground = new SolidColorBrush(settings.TitleBackground);
                     viewModel.TitleFont = new FontFamily(settings.TitleFont);
                     viewModel.TitleAlignment = settings.TitleAlignment;
-                    viewModel.ContentBackground = new SolidColorBrush(settings.ContentBackground);
+                    viewModel.TitleFontSize = settings.TitleFontSize;
                     viewModel.Opacity = settings.Opacity;
                     viewModel.IconSize = settings.IconSize;
                 }
@@ -287,7 +293,7 @@ namespace Layouter.Services
                 TitleBackground = defaultGlobalSettings.TitleBackground,
                 TitleFont = defaultGlobalSettings.TitleFont,
                 TitleAlignment = defaultGlobalSettings.TitleAlignment,
-                ContentBackground = defaultGlobalSettings.ContentBackground,
+                TitleFontSize = defaultGlobalSettings.TitleFontSize,
                 Opacity = defaultGlobalSettings.Opacity,
                 IconSize = defaultGlobalSettings.IconSize
             };
@@ -306,8 +312,8 @@ namespace Layouter.Services
         public Color TitleForeground { get; set; }
         public Color TitleBackground { get; set; }
         public string TitleFont { get; set; }
+        public double TitleFontSize { get; set; }
         public HorizontalAlignment TitleAlignment { get; set; }
-        public Color ContentBackground { get; set; }
         public double Opacity { get; set; }
         public IconSize IconSize { get; set; }
     }

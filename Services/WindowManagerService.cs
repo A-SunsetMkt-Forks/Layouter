@@ -455,7 +455,7 @@ namespace Layouter.Services
                     TitleBackground = new SolidColorBrush(globalSettings.TitleBackground),
                     TitleFont = new FontFamily(globalSettings.TitleFont),
                     TitleAlignment = globalSettings.TitleAlignment,
-                    ContentBackground = new SolidColorBrush(globalSettings.ContentBackground),
+                    TitleFontSize = globalSettings.TitleFontSize,
                     Opacity = globalSettings.Opacity,
                     IconSize = globalSettings.IconSize
                 };
@@ -471,7 +471,7 @@ namespace Layouter.Services
                         viewModel.TitleBackground = tempViewModel.TitleBackground.Clone();
                         viewModel.TitleFont = new FontFamily(tempViewModel.TitleFont.Source);
                         viewModel.TitleAlignment = tempViewModel.TitleAlignment;
-                        viewModel.ContentBackground = tempViewModel.ContentBackground.Clone();
+                        viewModel.TitleFontSize = tempViewModel.TitleFontSize;
                         viewModel.Opacity = tempViewModel.Opacity;
                         viewModel.IconSize = tempViewModel.IconSize;
 
