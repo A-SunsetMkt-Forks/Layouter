@@ -15,79 +15,6 @@ using System.Security.Principal;
 
 namespace Layouter.Utility
 {
-    #region COM Interop
-
-    [ComImport]
-    [Guid("00000000-0000-0000-C000-000000000046")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IUnknown
-    {
-        void QueryInterface(ref Guid riid, out IntPtr ppvObject);
-        void AddRef();
-        void Release();
-    }
-
-    //[ComImport]
-    //[Guid("43826D1E-E718-42EE-BC55-A1E261C37BFE")]
-    //[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    //public interface IShellItem
-    //{
-    //    void BindToHandler(IntPtr pbc, ref Guid bhid, ref Guid riid, out IntPtr ppv);
-    //    void GetParent(out IShellItem ppsi);
-    //    int GetDisplayName(uint sigdnName, out IntPtr ppszName);
-    //    void GetAttributes(uint sfgaoMask, out uint psfgaoAttribs);
-    //    int Compare(IShellItem psi, uint hint, out int piOrder);
-    //}
-
-    [ComImport]
-    [Guid("43826D1E-E718-42EE-BC55-A1E261C37BFE")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IShellItem
-    {
-        [PreserveSig]
-        int BindToHandler(IntPtr pbc, [In] ref Guid bhid, [In] ref Guid riid, out IntPtr ppv);
-
-        [PreserveSig]
-        int GetParent(out IShellItem ppsi);
-
-        [PreserveSig]
-        int GetDisplayName([In] uint sigdnName, out IntPtr ppszName);
-
-        [PreserveSig]
-        int GetAttributes([In] uint sfgaoMask, out uint psfgaoAttribs);
-
-        [PreserveSig]
-        int Compare([In] IShellItem psi, [In] uint hint, out int piOrder);
-    }
-
-
-    [ComImport]
-    [Guid("B63EA76D-1F85-456F-A19C-48159EFA858B")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IShellItemArray
-    {
-        void BindToHandler(IntPtr pbc, ref Guid bhid, ref Guid riid, out IntPtr ppvOut);
-        void GetPropertyStore(int flags, ref Guid riid, out IntPtr ppv);
-        void GetPropertyDescriptionList(IntPtr keyType, ref Guid riid, out IntPtr ppv);
-        void GetAttributes(int AttribFlags, uint sfgaoMask, out uint psfgaoAttribs);
-        uint GetCount();
-        void GetItemAt(uint dwIndex, out IShellItem ppsi);
-        void EnumItems(out IntPtr ppenumShellItems);
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct SHFILEINFO
-    {
-        public IntPtr hIcon;
-        public int iIcon;
-        public uint dwAttributes;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-        public string szDisplayName;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
-        public string szTypeName;
-    }
-
-    #endregion
 
     public class ShellItemInfo
     {
@@ -111,8 +38,9 @@ namespace Layouter.Utility
             { "计算机", "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}" },
             { "控制面板", "::{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}" },
             { "回收站", "::{645FF040-5081-101B-9F08-00AA002F954E}" },
-            { "网络", "::{208D2C60-3AEA-1069-A2D7-08002B30309D}" },
+            { "网络", "::{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}" },
             { "桌面", "::{B4BFCC3A-DB2C-424C-B29F-7FE9909CFC64}" },
+            { "所有控制面板项", "::{21EC2020-3AEA-1069-A2DD-08002B30309D}" },
             { "文档", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) },
             { "我的文档", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) },
             { "图片", Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) },
@@ -131,41 +59,6 @@ namespace Layouter.Utility
             { "临时文件", Path.GetTempPath() },
             { GetDisplayCurrentUserName(),Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) }
         };
-
-
-
-        [DllImport("shell32.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
-        private static extern int SHCreateShellItemArrayFromDataObject(System.Runtime.InteropServices.ComTypes.IDataObject pdo, ref Guid riid, out IShellItemArray ppv);
-
-        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-        private static extern int SHGetNameFromIDList(IntPtr pidl, uint sigdnName, out IntPtr ppszName);
-
-        //[DllImport("shell32.dll")]
-        //private static extern IntPtr SHGetNameFromIDList(IntPtr pidl, int sigdnName);
-
-        [DllImport("shell32.dll")]
-        private static extern int SHGetFolderLocation(IntPtr hwndOwner, int nFolder, IntPtr hToken, uint dwReserved, out IntPtr ppidl);
-
-        [DllImport("shell32.dll")]
-        private static extern IntPtr ILCreateFromPath([MarshalAs(UnmanagedType.LPWStr)] string pszPath);
-
-        [DllImport("shell32.dll")]
-        private static extern void ILFree(IntPtr pidl);
-
-        [DllImport("shell32.dll")]
-        private static extern int SHGetIDListFromObject(IntPtr punk, out IntPtr ppidl);
-
-        [DllImport("shell32.dll")]
-        private static extern int SHGetFileInfo(IntPtr pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool DestroyIcon(IntPtr hIcon);
-
-        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-        private static extern IntPtr SHParseDisplayName([MarshalAs(UnmanagedType.LPWStr)] string pszName, IntPtr pbc, out IntPtr ppidl, uint sfgaoIn, out uint psfgaoOut);
-
-        [DllImport("ole32.dll")]
-        private static extern void CoTaskMemFree(IntPtr pv);
 
         public static System.Runtime.InteropServices.ComTypes.IDataObject GetComDataObject(System.Windows.IDataObject wpfDataObject)
         {
@@ -359,53 +252,8 @@ namespace Layouter.Utility
             return iconSource;
         }
 
-        //public static ImageSource GetShellItemIcon(string path)
-        //{
-        //    if (string.IsNullOrEmpty(path))
-        //    {
-        //        return null;
-        //    }
-        //    IntPtr pidl = ILCreateFromPath(path);
-        //    if (pidl == IntPtr.Zero)
-        //    {
-        //        return null;
-        //    }
-        //    try
-        //    {
-        //        SHFILEINFO shfi = new SHFILEINFO();
-        //        if (SHGetFileInfo(pidl, 0, ref shfi, (uint)Marshal.SizeOf(shfi), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_PIDL) != 0)
-        //        {
-        //            if (shfi.hIcon != IntPtr.Zero)
-        //            {
-        //                ImageSource iconSource = Imaging.CreateBitmapSourceFromHIcon(shfi.hIcon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-        //                DestroyIcon(shfi.hIcon);
-        //                return iconSource;
-        //            }
-        //        }
-        //        return null;
-        //    }
-        //    finally
-        //    {
-        //        ILFree(pidl);
-        //    }
-        //}
 
-        /// <summary>
-        /// 映射常见的特殊文件夹名称到CLSID
-        /// </summary>
-        public static string MapSpecialFolderByName(string displayName)
-        {
-            if (specialFolders.TryGetValue(displayName, out string path))
-            {
-                return path;
-            }
-            return null;
-        }
-
-        public static string GetSpecialFolderDisplayName(string path)
-        {
-            return specialFolders.FirstOrDefault(x => x.Value == path).Key;
-        }
+        #region 获取当前用户名
 
 
         /// <summary>
@@ -451,6 +299,30 @@ namespace Layouter.Utility
             return Environment.UserName;
         }
 
+        #endregion
+
+        #region 特殊目录处理
+
+        /// <summary>
+        /// 映射常见的特殊文件夹名称到CLSID
+        /// </summary>
+        public static string MapSpecialFolderByName(string displayName)
+        {
+            if (specialFolders.TryGetValue(displayName, out string path))
+            {
+                return path;
+            }
+            return null;
+        }
+
+        public static string GetSpecialFolderDisplayName(string path)
+        {
+            return specialFolders.FirstOrDefault(x => x.Value == path).Key;
+        }
+
+        /// <summary>
+        /// 根据路径或CLSID打开文件夹或特殊项目
+        /// </summary>
         public static void OpenSpecialFolder(string path)
         {
             try
@@ -484,5 +356,136 @@ namespace Layouter.Utility
                 Log.Error($"无法打开目录: {path}. \r\n原因: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// 根据路径或CLSID打开文件夹或特殊项目的属性面板
+        /// </summary>
+        /// <param name="path">文件夹路径或特殊项目的CLSID</param>
+        /// <returns>是否成功打开属性面板</returns>
+        public static bool ShowProperties(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return false;
+            }
+            try
+            {
+                // 尝试使用COM对象方法
+                if (ShowPropertiesUsingCOM(path))
+                {
+                    return true;
+                }
+                // 尝试使用rundll32方法
+                return ShowPropertiesUsingRundll32(path);
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"打开属性面板时出错: {ex.Message}");
+                return false;
+            }
+        }
+
+        private static bool ShowPropertiesUsingCOM(string path)
+        {
+            Type shellAppType = Type.GetTypeFromProgID("Shell.Application");
+            if (shellAppType == null)
+            {
+                return false;
+            }
+            dynamic shell = null;
+
+            try
+            {
+                shell = Activator.CreateInstance(shellAppType);
+
+                // 处理CLSID格式路径
+                if (path.StartsWith("::"))
+                {
+                    var folder = shell.NameSpace(path);
+                    if (folder != null)
+                    {
+                        var obj = folder.Self;
+                        if (obj != null)
+                        {
+                            obj.InvokeVerb("properties");
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
+                // 处理普通文件路径
+                if (!Directory.Exists(path) && !File.Exists(path))
+                {
+                    return false;
+                }
+                string dirPath = path;
+                string fileName = string.Empty;
+
+                if (File.Exists(path))
+                {
+                    dirPath = Path.GetDirectoryName(path);
+                    fileName = Path.GetFileName(path);
+                }
+
+                var parentFolder = shell.NameSpace(dirPath);
+                if (parentFolder == null)
+                {
+                    return false;
+                }
+                dynamic folderItem;
+
+                if (!string.IsNullOrEmpty(fileName))
+                {
+                    folderItem = parentFolder.ParseName(fileName);
+                }
+                else
+                {
+                    folderItem = parentFolder.Self;
+                }
+
+                if (folderItem != null)
+                {
+                    folderItem.InvokeVerb("properties");
+                    return true;
+                }
+
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                if (shell != null)
+                {
+                    Marshal.ReleaseComObject(shell);
+                }
+            }
+        }
+
+        private static bool ShowPropertiesUsingRundll32(string path)
+        {
+            try
+            {
+                // 对于普通路径，使用rundll32
+                if (!path.StartsWith("::"))
+                {
+                    Process.Start("rundll32.exe", $"shell32.dll,ShellExec_RunDLL properties \"{path}\"");
+                }
+                else
+                {
+                    return false;
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        #endregion
     }
 }

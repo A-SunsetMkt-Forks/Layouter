@@ -13,6 +13,7 @@ namespace Layouter.Models
         private Size size = new Size(48, 48);
         private bool isDragging;
         private IconType iconType = IconType.Normal;
+        private double textSize = 12d;
 
         public string Id 
         { 
@@ -56,6 +57,12 @@ namespace Layouter.Models
             set => SetProperty(ref iconType, value);
         }
 
+        public double TextSize
+        {
+            get => textSize;
+            set => SetProperty(ref textSize, value);
+        }
+
         public DesktopIcon()
         {
             // 生成唯一ID
@@ -71,7 +78,8 @@ namespace Layouter.Models
                 IconPath = this.IconPath,
                 Position = this.Position,
                 Size = this.Size,
-                IconType = this.IconType
+                IconType = this.IconType,
+                TextSize = this.TextSize
             };
         }
     }

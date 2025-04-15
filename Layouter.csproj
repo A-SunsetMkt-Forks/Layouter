@@ -6,21 +6,17 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <AssemblyVersion>1.0.5.0</AssemblyVersion>
-    <FileVersion>1.0.5.0</FileVersion>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="Resources\Images\**" />
-    <EmbeddedResource Remove="Resources\Images\**" />
-    <None Remove="Resources\Images\**" />
-    <Page Remove="Resources\Images\**" />
-  </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="MainWindow.xaml.cs" />
     <Compile Remove="Models\Configuration.cs" />
     <Compile Remove="Services\ConfigurationService.cs" />
+    <Compile Remove="Services\DataService.cs" />
+    <Compile Remove="Utility\Win32Util.cs" />
+    <Compile Remove="ViewModels\AddPartitionViewModel.cs" />
     <Compile Remove="ViewModels\Feature1ViewModel.cs" />
     <Compile Remove="Views\DesktopManagerView.xaml.cs" />
     <Compile Remove="Views\Feature1Window.xaml.cs" />
@@ -28,6 +24,7 @@
 
   <ItemGroup>
     <Page Remove="MainWindow.xaml" />
+    <Page Remove="Views\AddPartitionWindow.xaml" />
     <Page Remove="Views\DesktopManagerView.xaml" />
     <Page Remove="Views\Feature1Window.xaml" />
   </ItemGroup>
@@ -38,9 +35,11 @@
     <PackageReference Include="Material.Icons.WPF" Version="2.3.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Serilog" Version="4.2.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageReference Include="System.Management" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -50,10 +49,9 @@
     <Reference Include="FluentIcons.Wpf">
       <HintPath>libs\FluentIcons.Wpf.dll</HintPath>
     </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Resources\" />
+    <Reference Include="Win32">
+      <HintPath>libs\Win32.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

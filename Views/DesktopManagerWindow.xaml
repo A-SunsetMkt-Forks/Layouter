@@ -15,6 +15,7 @@
         Background="#20808080"
         BorderBrush="#2F4F4F" 
         BorderThickness="1"
+        Opacity="{Binding Opacity}"
         AllowDrop="True"
         ResizeMode="CanResizeWithGrip"
         ShowInTaskbar="False">
@@ -36,111 +37,139 @@
     </Window.Resources>
 
     <Grid>
-        <!-- 分区标题栏 -->
-        <DockPanel Height="30" VerticalAlignment="Top" Background="#40808080" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-            <TextBlock x:Name="TitleTextBlock" Text="{Binding Name}" Margin="10,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#303030" MouseDown="TitleTextBlock_MouseDown" />
-            <TextBox x:Name="TitleEditBox" Visibility="Collapsed" Margin="10,3,0,3" VerticalAlignment="Center" KeyDown="TitleEditBox_KeyDown" LostFocus="TitleEditBox_LostFocus" />
+        <Border CornerRadius="5" BorderThickness="1" BorderBrush="#CCCCCC">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-            <!-- 功能按钮区域 -->
-            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
-                <!-- 新增分区按钮 -->
-                <Button Width="30" Height="30" ToolTip="新建分区" 
-                        Background="Transparent" BorderThickness="0" Click="NewPartition_Click">
-                    <TextBlock Text="+" FontSize="16" FontWeight="Bold" Foreground="#505050" />
-                </Button>
+                <!-- 分区标题栏 -->
+                <Border Grid.Row="0" Background="{Binding TitleBackground}" CornerRadius="5,5,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
 
-                <!-- 关闭按钮 -->
-                <Button Content="×" Width="30" Height="30" HorizontalAlignment="Right" 
-                        Click="ClosePartition_Click" 
-                        Background="Transparent" BorderThickness="0" FontSize="16" Foreground="#505050"/>
+                    <Grid x:Name="TitleBar" Height="30">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                <!-- 设置按钮 -->
-                <Button Width="30" Height="30" ToolTip="设置" 
-                        Background="Transparent" BorderThickness="0" Click="Settings_Click" x:Name="SettingsButton">
-                    <TextBlock Text="⚙" FontSize="16" Foreground="#505050" />
-                </Button>
-            </StackPanel>
-        </DockPanel>
+                        <Grid Grid.Column="0">
+                            <TextBlock x:Name="TitleTextBlock" Text="{Binding Name}" Foreground="{Binding TitleForeground}"  Margin="10,0" FontSize="{Binding TitleFontSize}"
+                                       FontFamily="{Binding TitleFont}" VerticalAlignment="Center" MouseDown="TitleTextBlock_MouseDown">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <!-- 左对齐 -->
+                                            <DataTrigger Binding="{Binding TitleAlignment}" Value="Left">
+                                                <Setter Property="HorizontalAlignment" Value="Left"/>
+                                            </DataTrigger>
+                                            <!-- 居中 -->
+                                            <DataTrigger Binding="{Binding TitleAlignment}" Value="Center">
+                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            </DataTrigger>
+                                            <!-- 右对齐 -->
+                                            <DataTrigger Binding="{Binding TitleAlignment}" Value="Right">
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
 
-        <!-- 设置菜单 -->
-        <Popup x:Name="SettingsPopup" StaysOpen="False" PlacementTarget="{Binding ElementName=SettingsButton}" Placement="Bottom">
-            <Border Background="White" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="3">
-                <StackPanel>
-                    <Button Content="窗口设置" Click="PartitionSettings_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
-                    <Button Content="删除窗口" Click="DeletePartition_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
-                    <Button Content="修改背景颜色" Click="ChangeBackground_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
-                    <Button Content="对齐图标" Click="AutoArrange_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
-                    <Button Content="对齐分区" Click="AlignPartitions_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
-                </StackPanel>
-            </Border>
-        </Popup>
+                            <!-- 标题编辑框 -->
+                            <TextBox x:Name="TitleEditBox" Visibility="Collapsed" Margin="10,3" KeyDown="TitleEditBox_KeyDown" LostFocus="TitleEditBox_LostFocus"/>
+                        </Grid>
+                        <!-- 功能按钮区域 -->
+                        <StackPanel Orientation="Horizontal" Grid.Column="1">
+                            <!-- 新增分区按钮 -->
+                            <Button Width="30" Height="30" ToolTip="新建分区"  Background="Transparent" BorderThickness="0" Click="NewPartition_Click">
+                                <TextBlock Text="+" FontSize="16" FontWeight="Bold" Foreground="{Binding TitleForeground}" />
+                            </Button>
 
-        <!-- 图标区域 -->
-        <ItemsControl ItemsSource="{Binding Icons}" Margin="5,35,5,5" 
+                            <!-- 关闭按钮 -->
+                            <Button Content="×" Width="30" Height="30" HorizontalAlignment="Right"  Click="ClosePartition_Click" 
+                                    Background="Transparent" BorderThickness="0" FontSize="16" Foreground="{Binding TitleForeground}"/>
+
+                            <!-- 设置按钮 -->
+                            <Button Width="30" Height="30" ToolTip="设置" Background="Transparent" BorderThickness="0" Click="Settings_Click" x:Name="SettingsButton">
+                                <TextBlock Text="⚙" FontSize="16" Foreground="{Binding TitleForeground}" />
+                            </Button>
+                        </StackPanel>
+
+                        <!-- 设置菜单 -->
+                        <Popup x:Name="SettingsPopup" StaysOpen="False" PlacementTarget="{Binding ElementName=SettingsButton}" Placement="Bottom">
+                            <Border Background="White" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="3">
+                                <StackPanel>
+                                    <Button Content="分区设置" Click="PartitionSettings_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
+                                    <Button Content="删除分区" Click="DeletePartition_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
+                                    <Button Content="对齐图标" Click="AutoArrange_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
+                                    <Button Content="对齐分区" Click="AlignPartitions_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </Border>
+
+                <!-- 图标区域 -->
+                <Border Grid.Row="1" Background="Transparent"  CornerRadius="0,0,5,5">
+                    <ItemsControl ItemsSource="{Binding Icons}" Margin="5,5,5,5" 
                      AllowDrop="True" Background="Transparent"
                      x:Name="iconsContainer"
                      PreviewMouseLeftButtonDown="IconsContainer_PreviewMouseLeftButtonDown"
                      PreviewMouseMove="IconsContainer_PreviewMouseMove"
                      Drop="IconsContainer_Drop"
                      ContextMenu="{StaticResource PartitionContextMenu}">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <Canvas IsItemsHost="True" Background="{Binding BackgroundColor}"/>
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas IsItemsHost="True" Background="{Binding BackgroundColor}"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
 
-            <ItemsControl.ItemContainerStyle>
-                <Style TargetType="ContentPresenter">
-                    <Setter Property="Canvas.Left" Value="{Binding Position.X}"/>
-                    <Setter Property="Canvas.Top" Value="{Binding Position.Y}"/>
-                </Style>
-            </ItemsControl.ItemContainerStyle>
-
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Grid Width="{Binding Size.Width}"
-                          Height="{Binding Size.Height}"
-                          Tag="{Binding}"
-                          MouseLeftButtonDown="Icon_MouseDown"
-                          MouseLeftButtonUp="Icon_MouseUp"
-                          ContextMenu="{StaticResource IconContextMenu}"
-                          >
-                        <Grid.Style>
-                            <Style TargetType="Grid">
-                                <Setter Property="Background" Value="Transparent" />
-                                <Setter Property="Cursor" Value="Arrow" />
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="#20FFFFFF" />
-                                        <Setter Property="Cursor" Value="Hand" />
-                                    </Trigger>
-                                </Style.Triggers>
+                        <ItemsControl.ItemContainerStyle>
+                            <Style TargetType="ContentPresenter">
+                                <Setter Property="Canvas.Left" Value="{Binding Position.X}"/>
+                                <Setter Property="Canvas.Top" Value="{Binding Position.Y}"/>
                             </Style>
-                        </Grid.Style>
-                        <Rectangle Fill="Transparent" />
+                        </ItemsControl.ItemContainerStyle>
 
-                        <!-- 图标 -->
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" >
-                            <!-- 使用文件系统图标 -->
-                            <Image Width="32" Height="32"
-                                   Stretch="Uniform"
-                                   Margin="0,2,0,5">
-                                <Image.Source>
-                                    <!-- 使用转换器获取文件图标 -->
-                                    <Binding Path="IconPath" Converter="{StaticResource FilePathToIconConverter}"/>
-                                </Image.Source>
-                            </Image>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Tag="{Binding}" MouseLeftButtonDown="Icon_MouseDown" MouseLeftButtonUp="Icon_MouseUp" ContextMenu="{StaticResource IconContextMenu}" >
+                                    <Grid.Style>
+                                        <Style TargetType="Grid">
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Setter Property="Cursor" Value="Arrow" />
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#40000000" />
+                                                    <Setter Property="Cursor" Value="Hand" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Grid.Style>
+                                    <Rectangle Fill="Transparent" />
 
-                            <!-- 文件名称 -->
-                            <TextBlock Text="{Binding Name}"
-                                     TextWrapping="Wrap"
-                                     TextAlignment="Center"
-                                     FontSize="10"
-                                     MaxWidth="60"/>
-                        </StackPanel>
-                    </Grid>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+                                    <!-- 图标 -->
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" >
+                                        <!-- 使用文件系统图标 -->
+                                        <Image Width="{Binding Size.Width}" Height="{Binding Size.Height}" Stretch="Uniform"  Margin="10,2,10,5">
+                                            <Image.Source>
+                                                <!-- 使用转换器获取文件图标 -->
+                                                <Binding Path="IconPath" Converter="{StaticResource FilePathToIconConverter}"/>
+                                            </Image.Source>
+                                        </Image>
+                                        <!-- 文件名称 -->
+                                        <TextBlock Text="{Binding Name}" TextWrapping="Wrap" TextAlignment="Center" FontSize="{Binding TextSize}" MaxWidth="60"/>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                </Border>
+            </Grid>
+        </Border>
     </Grid>
+
+
 </Window>

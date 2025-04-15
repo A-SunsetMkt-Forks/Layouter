@@ -2,186 +2,232 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using FluentIcons.Common;
 using Layouter.Models;
-using System.Windows.Media;
 
 namespace Layouter.ViewModels
 {
-    public partial class DesktopManagerViewModel : ObservableObject
+    public class DesktopManagerViewModel : ObservableObject
     {
-        private static readonly string[] DefaultIconPaths = new[]
-        {
-            "/Layouter;component/Resources/Images/folder.png",
-            "/Layouter;component/Resources/Images/document.png",
-            "/Layouter;component/Resources/Images/image.png",
-            "/Layouter;component/Resources/Images/music.png",
-            "/Layouter;component/Resources/Images/video.png"
-        };
+        private ObservableCollection<DesktopIcon> icons = new ObservableCollection<DesktopIcon>();
+        public ObservableCollection<DesktopIcon> Icons => icons;
 
-        private static readonly string[] DefaultNames = new[]
-        {
-            "文件夹", "文档", "图片", "音乐", "视频"
-        };
+        private const double IconWidth = 64;
+        private const double IconHeight = 64;
+        private const double IconSpacing = 10;
 
-        [ObservableProperty]
-        private ObservableCollection<IconPartition> partitions = new();
+        private string name;
+        private double opacity = 0.90;
+        private string backgroundColor;
+        private SolidColorBrush titleForeground = new SolidColorBrush(Colors.White);
+        private SolidColorBrush titleBackground = new SolidColorBrush(Colors.DodgerBlue);
+        private FontFamily titleFont = new FontFamily("Microsoft YaHei");
+        private double titleFontSize = 14.0;
+        private HorizontalAlignment titleAlignment = HorizontalAlignment.Left;
+        private IconSize iconSize = IconSize.Medium;
+        private double iconTextSize = 12.0;
 
-        [ObservableProperty]
-        private DesktopIcon draggingIcon;
-
-        [ObservableProperty]
-        private IconPartition sourcePartition;
-
-        [ObservableProperty]
-        private Point currentDragPosition;
 
         public DesktopManagerViewModel()
         {
-            // 创建默认分区
-            if (Partitions.Count == 0)
-            {
-                CreateDefaultPartition();
-            }
+            ArrangeIconsCommand = new RelayCommand(ArrangeIcons);
         }
 
-        private void CreateDefaultPartition()
+        public string windowId { get; set; }
+
+        public byte TitleBaseAlpha { get; private set; } = 64;//透明度：64/256
+
+        public string Name
         {
-            var partition = new IconPartition
-            {
-                Name = "默认分区",
-                Bounds = new Rect(10, 10, 400, 300),
-                AutoArrange = true
-            };
+            get => name;
+            set => SetProperty(ref name, value);
+        }
 
-            Partitions.Add(partition);
+        public SolidColorBrush TitleForeground
+        {
+            get => titleForeground;
+            set => SetProperty(ref titleForeground, value);
+        }
 
-            // 添加一些示例图标
-            for (int i = 0; i < 5; i++)
+        // 标题栏背景色
+        public SolidColorBrush TitleBackground
+        {
+            get => titleBackground;
+            set
             {
-                var icon = new DesktopIcon
+                Color c = value.Color;
+                if (titleBackground != null)
                 {
-                    Name = DefaultNames[i % DefaultNames.Length],
-                    Size = new Size(48, 48),
-                    IconPath = DefaultIconPaths[i % DefaultIconPaths.Length]
-                };
+                    byte baseAlpha = TitleBaseAlpha;
+                    c.A = baseAlpha;
+                }
 
-                partition.AddIcon(icon);
+                SetProperty(ref titleBackground, new SolidColorBrush(c));
             }
         }
 
-        [RelayCommand]
-        private void CreatePartition(Rect bounds)
+        // 标题栏字体
+        public FontFamily TitleFont
         {
-            string name = $"分区_{Partitions.Count + 1}";
-            var partition = new IconPartition
-            {
-                Name = name,
-                Bounds = bounds,
-                AutoArrange = true
-            };
-
-            Partitions.Add(partition);
+            get => titleFont;
+            set => SetProperty(ref titleFont, value);
         }
 
-        [RelayCommand]
-        private void DeletePartition(string partitionId)
+        public double TitleFontSize
         {
-            var partition = Partitions.FirstOrDefault(p => p.Id == partitionId);
-            if (partition != null)
-            {
-                Partitions.Remove(partition);
-            }
+            get => titleFontSize;
+            set => SetProperty(ref titleFontSize, value);
         }
 
-        [RelayCommand]
-        private void StartDrag(DesktopIcon icon)
+        // 标题栏文本显示位置
+        public HorizontalAlignment TitleAlignment
         {
-            var partition = Partitions.FirstOrDefault(p => p.Icons.Contains(icon));
-            if (partition != null)
-            {
-                DraggingIcon = icon;
-                SourcePartition = partition;
-                partition.RemoveIcon(icon);
-                icon.IsDragging = true;
-            }
+            get => titleAlignment;
+            set => SetProperty(ref titleAlignment, value);
         }
 
-        [RelayCommand]
-        private void DragMove(Point position)
+
+        // 分区窗口透明度
+        public double Opacity
         {
-            if (DraggingIcon != null)
+            get => opacity;
+            set => SetProperty(ref opacity, value);
+        }
+
+        // 图标大小
+        public IconSize IconSize
+        {
+            get => iconSize;
+            set
             {
-                CurrentDragPosition = position;
-                DraggingIcon.Position = new Point(
-                    position.X - DraggingIcon.Size.Width / 2,
-                    position.Y - DraggingIcon.Size.Height / 2);
+                if (SetProperty(ref iconSize, value))
+                {
+                    // 更新图标尺寸
+                    UpdateIconSize();
+                }
             }
         }
 
-        [RelayCommand]
-        private void EndDrag(Point position)
+        /// <summary>
+        /// 图标文本大小
+        /// </summary>
+        public double IconTextSize
         {
-            if (DraggingIcon == null)
-            {
-                return;
-            }
-            bool iconPlaced = false;
-
-            // 查找目标分区
-            var targetPartition = Partitions.FirstOrDefault(p =>
-                p.ContainsPoint(position) && p.CanFitIcon());
-
-            if (targetPartition != null)
-            {
-                // 将图标添加到新分区
-                iconPlaced = targetPartition.AddIcon(DraggingIcon);
-            }
-
-            // 如果未能放置图标，则放回原分区
-            if (!iconPlaced && SourcePartition != null)
-            {
-                SourcePartition.AddIcon(DraggingIcon);
-            }
-
-            DraggingIcon.IsDragging = false;
-            DraggingIcon = null;
-            SourcePartition = null;
+            get => iconTextSize;
+            set => SetProperty(ref iconTextSize, value);
         }
 
-        [RelayCommand]
-        private void AlignPartitions(double spacing = 10)
-        {
-            if (!Partitions.Any())
-            {
-                return;
-            }
-            var orderedPartitions = Partitions.OrderBy(p => p.Bounds.Top)
-                                            .ThenBy(p => p.Bounds.Left)
-                                            .ToList();
 
-            double currentY = spacing;
+        // 分区背景颜色
+        public string BackgroundColor
+        {
+            get { return backgroundColor; }
+            set
+            {
+                backgroundColor = value;
+                OnPropertyChanged(nameof(BackgroundColor));
+            }
+        }
+
+        // 命令
+        public IRelayCommand ArrangeIconsCommand { get; }
+
+
+        public void ArrangeIcons()
+        {
+            double x = IconSpacing;
+            double y = IconSpacing;
             double maxHeight = 0;
 
-            foreach (var partition in orderedPartitions)
+            foreach (var icon in Icons)
             {
-                var bounds = partition.Bounds;
-                if (bounds.Left == spacing)
+                // 检查是否需要换行
+                if (x + IconWidth + IconSpacing > GetPartitionWidth() && x > IconSpacing)
                 {
-                    currentY += maxHeight + spacing;
+                    x = IconSpacing;
+                    y += maxHeight + IconSpacing;
                     maxHeight = 0;
                 }
 
-                partition.Bounds = new Rect(
-                    bounds.Left,
-                    currentY,
-                    bounds.Width,
-                    bounds.Height
-                );
+                // 设置图标位置
+                icon.Position = new Point(x, y);
 
-                maxHeight = Math.Max(maxHeight, bounds.Height);
+                // 更新位置
+                x += IconWidth + IconSpacing;
+                maxHeight = Math.Max(maxHeight, IconHeight);
             }
         }
+
+        private void UpdateIconSize()
+        {
+            Size newSize;
+            switch (IconSize)
+            {
+                case IconSize.Small:
+                    newSize = new Size(32, 32);
+                    break;
+                case IconSize.Large:
+                    newSize = new Size(64, 64);
+                    break;
+                case IconSize.Medium:
+                default:
+                    newSize = new Size(48, 48);
+                    break;
+            }
+
+            // 更新所有图标的尺寸
+            foreach (var icon in Icons)
+            {
+                icon.Size = newSize;
+            }
+
+            // 重新排列图标
+            ArrangeIcons();
+        }
+
+        private double GetPartitionWidth()
+        {
+            // 假设窗口宽度为有效区域宽度
+            return 400; // 这是默认值，实际使用时应该获取窗口的实际宽度
+        }
+
+        public void AddIcon(DesktopIcon icon)
+        {
+            if (!Icons.Any(i => i.Id == icon.Id))
+            {
+                Icons.Add(icon);
+            }
+        }
+
+        public void RemoveIcon(DesktopIcon icon)
+        {
+            if (Icons.Contains(icon))
+            {
+                Icons.Remove(icon);
+            }
+        }
+
+        public DesktopIcon GetIconById(string id)
+        {
+            foreach (var icon in Icons)
+            {
+                if (icon.Id == id)
+                {
+                    return icon;
+                }
+            }
+            return null;
+        }
     }
+
+    public enum IconSize
+    {
+        Small,
+        Medium,
+        Large
+    }
+
 }

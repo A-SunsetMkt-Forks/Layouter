@@ -11,25 +11,56 @@ using CommunityToolkit.Mvvm.Input;
 using Layouter.Services;
 using Layouter.Views;
 using Layouter.ViewModels;
+using Hardcodet.Wpf.TaskbarNotification;
 
 namespace Layouter.ViewModels
 {
     public class TrayIconViewModel : ObservableObject
     {
-        public ICommand OpenFeature1Command { get; }
+        private TaskbarIcon _trayIcon;
+
+        public ICommand NewWindowCommand { get; }
+        public ICommand WindowSettingCommand { get; }
         public ICommand ExitCommand { get; }
 
         public TrayIconViewModel()
         {
-            OpenFeature1Command = new RelayCommand(OpenFeature1);
+            NewWindowCommand = new RelayCommand(OpenNewWindow);
+            WindowSettingCommand = new RelayCommand(SettingWindow);
             ExitCommand = new RelayCommand(Exit);
         }
 
-        private void OpenFeature1()
+        public void SetTrayIcon(TaskbarIcon trayIcon)
+        {
+            _trayIcon = trayIcon;
+
+            // 初始化托盘菜单
+            InitializeTrayMenu();
+        }
+
+        private void InitializeTrayMenu()
+        {
+            try
+            {
+                // 初始化托盘菜单管理器
+                TrayMenuService.Instance.Initialize(this);
+
+                if (_trayIcon != null)
+                {
+                    _trayIcon.ContextMenu = TrayMenuService.Instance.GetTrayMenu();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Information($"初始化托盘菜单时出错: {ex.Message}");
+            }
+        }
+
+        private void OpenNewWindow()
         {
             // 创建一个新的分区窗口
             var window = new DesktopManagerWindow();
-            
+
             PartitionDataService.Instance.LoadPartitionData(window, Guid.NewGuid().ToString());
             window.Show();
 
@@ -37,9 +68,15 @@ namespace Layouter.ViewModels
             WindowManagerService.Instance.ArrangeWindows();
         }
 
+        private void SettingWindow()
+        {
+
+        }
+
         private void Exit()
         {
             Application.Current.Shutdown();
         }
+
     }
 }

@@ -1,6 +1,7 @@
 using System.Configuration;
 using System.Data;
 using System.Windows;
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using Layouter.Logs;
 using Layouter.Services;
@@ -39,10 +40,11 @@ namespace Layouter
             serviceProvider = services.BuildServiceProvider();
             Ioc.Default.ConfigureServices(serviceProvider);
 
-            // 启动托盘图标服务而非主窗口
-            trayIconService = serviceProvider.GetRequiredService<TrayIconService>();
-            trayIconService.Initialize();
-            
+            // 初始化自启动设置
+            GeneralSettingsService.Instance.InitializeAutoStart();
+            // 启动托盘图标
+            TrayIconService.Instance.Initialize();
+
             // 尝试恢复上一次的分区配置
             RestorePartitionsFromLastSession();
         }
@@ -50,32 +52,31 @@ namespace Layouter
         private void ConfigureServices(IServiceCollection services)
         {
             // 注册服务
-            //services.AddSingleton<IDataService, DataService>();
             services.AddSingleton<TrayIconService>();
+            services.AddSingleton<TrayMenuService>();
+            services.AddSingleton<GeneralSettingsService>();
             services.AddSingleton<DesktopIconService>();
             services.AddSingleton<PartitionDataService>();
             services.AddSingleton<WindowManagerService>();
 
             services.AddSingleton<TrayIconViewModel>();
-            services.AddSingleton<PartitionViewModel>();
             services.AddSingleton<DesktopManagerViewModel>();
-
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
             // 保存所有分区配置
             SaveAllPartitions();
-            
+
             // 清理资源
             trayIconService?.Dispose();
             serviceProvider?.Dispose();
 
-            Log.CloseAndFlush(); 
+            Log.CloseAndFlush();
 
             base.OnExit(e);
         }
-        
+
         private void RestorePartitionsFromLastSession()
         {
             try
@@ -86,13 +87,12 @@ namespace Layouter
             catch (System.Exception ex)
             {
                 Log.Information($"恢复分区配置失败: {ex.Message}");
-                
-                // 如果恢复失败，确保至少创建一个新分区
+
                 var window = new DesktopManagerWindow();
                 window.Show();
             }
         }
-        
+
         private void SaveAllPartitions()
         {
             try
@@ -105,5 +105,6 @@ namespace Layouter
                 Log.Information($"保存分区配置失败: {ex.Message}");
             }
         }
+
     }
 }

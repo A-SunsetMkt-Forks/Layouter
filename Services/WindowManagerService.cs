@@ -20,7 +20,9 @@ namespace Layouter.Services
         private const double SnapThreshold = 10; // 吸附阈值，当窗口边缘距离其他窗口边缘小于此值时触发吸附
         private bool isArrangingWindows = false; // 标记是否正在执行ArrangeWindows操作
 
-        private WindowManagerService() { }
+        private WindowManagerService()
+        {
+        }
 
         public void RegisterWindow(DesktopManagerWindow window)
         {
@@ -457,7 +459,8 @@ namespace Layouter.Services
                     TitleAlignment = globalSettings.TitleAlignment,
                     TitleFontSize = globalSettings.TitleFontSize,
                     Opacity = globalSettings.Opacity,
-                    IconSize = globalSettings.IconSize
+                    IconSize = globalSettings.IconSize,
+                    IconTextSize = globalSettings.IconTextSize
                 };
 
                 // 应用到所有窗口
@@ -474,6 +477,7 @@ namespace Layouter.Services
                         viewModel.TitleFontSize = tempViewModel.TitleFontSize;
                         viewModel.Opacity = tempViewModel.Opacity;
                         viewModel.IconSize = tempViewModel.IconSize;
+                        viewModel.IconTextSize = tempViewModel.IconTextSize;
 
                         // 更新图标大小
                         (window as DesktopManagerWindow)?.UpdateIconSizes();

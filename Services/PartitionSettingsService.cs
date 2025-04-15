@@ -42,7 +42,8 @@ namespace Layouter.Services
                     TitleFontSize = viewModel.TitleFontSize,
                     TitleAlignment = viewModel.TitleAlignment,
                     Opacity = viewModel.Opacity,
-                    IconSize = viewModel.IconSize
+                    IconSize = viewModel.IconSize,
+                    IconTextSize = viewModel.IconTextSize
                 };
 
                 string json = JsonConvert.SerializeObject(settings, Formatting.Indented,
@@ -57,7 +58,9 @@ namespace Layouter.Services
             }
         }
 
-        // 保存单个窗口的样式配置
+        /// <summary>
+        /// 保存单个窗口的样式配置
+        /// </summary>
         public void SaveWindowSettings(DesktopManagerViewModel viewModel)
         {
 
@@ -82,7 +85,8 @@ namespace Layouter.Services
                     TitleFontSize = viewModel.TitleFontSize,
                     TitleAlignment = viewModel.TitleAlignment,
                     Opacity = viewModel.Opacity,
-                    IconSize = viewModel.IconSize
+                    IconSize = viewModel.IconSize,
+                    IconTextSize = viewModel.IconTextSize
                 };
 
                 // 保存所有窗口配置
@@ -114,7 +118,8 @@ namespace Layouter.Services
                         TitleFontSize = defaultSettings.TitleFontSize,
                         TitleAlignment = defaultSettings.TitleAlignment,
                         Opacity = defaultSettings.Opacity,
-                        IconSize = defaultSettings.IconSize
+                        IconSize = defaultSettings.IconSize,
+                        IconTextSize = defaultSettings.IconTextSize
                     });
 
                     return defaultSettings;
@@ -132,7 +137,9 @@ namespace Layouter.Services
             }
         }
 
-        // 加载单个窗口的样式配置
+        /// <summary>
+        /// 加载单个窗口的样式配置
+        /// </summary>
         public PartitionSettings LoadWindowSettings(string windowId)
         {
             try
@@ -171,7 +178,9 @@ namespace Layouter.Services
             }
         }
 
-        // 加载所有窗口的样式配置
+        /// <summary>
+        /// 加载所有窗口的样式配置
+        /// </summary>
         private Dictionary<string, PartitionSettings> LoadAllWindowSettings()
         {
             try
@@ -193,7 +202,9 @@ namespace Layouter.Services
             }
         }
 
-        // 应用样式配置到ViewModel
+        /// <summary>
+        /// 应用样式配置到ViewModel
+        /// </summary>
         public void ApplySettingsToViewModel(string windowId, DesktopManagerViewModel viewModel)
         {
             try
@@ -209,6 +220,7 @@ namespace Layouter.Services
                 viewModel.TitleFontSize = settings.TitleFontSize;
                 viewModel.Opacity = settings.Opacity;
                 viewModel.IconSize = settings.IconSize;
+                viewModel.IconTextSize = settings.IconTextSize;
 
                 Log.Information($"已应用样式配置到窗口 {windowId}");
             }
@@ -218,7 +230,9 @@ namespace Layouter.Services
             }
         }
 
-        // 获取默认的全局样式配置
+        /// <summary>
+        /// 获取默认的全局样式配置
+        /// </summary>
         private GlobalPartitionSettings GetDefaultGlobalSettings()
         {
             return new GlobalPartitionSettings
@@ -230,7 +244,8 @@ namespace Layouter.Services
                 TitleAlignment = HorizontalAlignment.Left,
                 TitleFontSize = 14d,
                 Opacity = 0.95,
-                IconSize = IconSize.Medium
+                IconSize = IconSize.Medium,
+                IconTextSize = 12d
             };
         }
 
@@ -246,58 +261,63 @@ namespace Layouter.Services
             }
         }
 
-        // 兼容旧版本的方法
-        public void LoadSettings(DesktopManagerViewModel viewModel, bool isGlobal = false)
-        {
-            try
-            {
-                if (isGlobal)
-                {
-                    var settings = LoadGlobalSettings();
+        ///// <summary>
+        ///// 兼容旧版本的方法
+        ///// </summary>
+        //public void LoadSettings(DesktopManagerViewModel viewModel, bool isGlobal = false)
+        //{
+        //    try
+        //    {
+        //        if (isGlobal)
+        //        {
+        //            var settings = LoadGlobalSettings();
 
-                    viewModel.TitleForeground = new SolidColorBrush(settings.TitleForeground);
-                    viewModel.TitleBackground = new SolidColorBrush(settings.TitleBackground);
-                    viewModel.TitleFont = new FontFamily(settings.TitleFont);
-                    viewModel.TitleAlignment = settings.TitleAlignment;
-                    viewModel.TitleFontSize = settings.TitleFontSize;
-                    viewModel.Opacity = settings.Opacity;
-                    viewModel.IconSize = settings.IconSize;
-                }
-                else
-                {
-                    // 由于没有windowId，这里只能加载全局配置
-                    var settings = LoadGlobalSettings();
+        //            viewModel.TitleForeground = new SolidColorBrush(settings.TitleForeground);
+        //            viewModel.TitleBackground = new SolidColorBrush(settings.TitleBackground);
+        //            viewModel.TitleFont = new FontFamily(settings.TitleFont);
+        //            viewModel.TitleAlignment = settings.TitleAlignment;
+        //            viewModel.TitleFontSize = settings.TitleFontSize;
+        //            viewModel.Opacity = settings.Opacity;
+        //            viewModel.IconSize = settings.IconSize;
+        //            viewModel.IconTextSize = settings.IconTextSize;
+        //        }
+        //        else
+        //        {
+        //            // 由于没有windowId，这里只能加载全局配置
+        //            var settings = LoadGlobalSettings();
 
-                    viewModel.TitleForeground = new SolidColorBrush(settings.TitleForeground);
-                    viewModel.TitleBackground = new SolidColorBrush(settings.TitleBackground);
-                    viewModel.TitleFont = new FontFamily(settings.TitleFont);
-                    viewModel.TitleAlignment = settings.TitleAlignment;
-                    viewModel.TitleFontSize = settings.TitleFontSize;
-                    viewModel.Opacity = settings.Opacity;
-                    viewModel.IconSize = settings.IconSize;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Information($"加载分区设置时出错: {ex.Message}");
-            }
-        }
+        //            viewModel.TitleForeground = new SolidColorBrush(settings.TitleForeground);
+        //            viewModel.TitleBackground = new SolidColorBrush(settings.TitleBackground);
+        //            viewModel.TitleFont = new FontFamily(settings.TitleFont);
+        //            viewModel.TitleAlignment = settings.TitleAlignment;
+        //            viewModel.TitleFontSize = settings.TitleFontSize;
+        //            viewModel.Opacity = settings.Opacity;
+        //            viewModel.IconSize = settings.IconSize;
+        //            viewModel.IconTextSize = settings.IconTextSize;
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Log.Information($"加载分区设置时出错: {ex.Message}");
+        //    }
+        //}
 
-        // 兼容旧版本的方法
-        public PartitionSettings GetDefaultSettings()
-        {
-            var defaultGlobalSettings = GetDefaultGlobalSettings();
-            return new PartitionSettings
-            {
-                TitleForeground = defaultGlobalSettings.TitleForeground,
-                TitleBackground = defaultGlobalSettings.TitleBackground,
-                TitleFont = defaultGlobalSettings.TitleFont,
-                TitleAlignment = defaultGlobalSettings.TitleAlignment,
-                TitleFontSize = defaultGlobalSettings.TitleFontSize,
-                Opacity = defaultGlobalSettings.Opacity,
-                IconSize = defaultGlobalSettings.IconSize
-            };
-        }
+        //// 兼容旧版本的方法
+        //public PartitionSettings GetDefaultSettings()
+        //{
+        //    var defaultGlobalSettings = GetDefaultGlobalSettings();
+        //    return new PartitionSettings
+        //    {
+        //        TitleForeground = defaultGlobalSettings.TitleForeground,
+        //        TitleBackground = defaultGlobalSettings.TitleBackground,
+        //        TitleFont = defaultGlobalSettings.TitleFont,
+        //        TitleAlignment = defaultGlobalSettings.TitleAlignment,
+        //        TitleFontSize = defaultGlobalSettings.TitleFontSize,
+        //        Opacity = defaultGlobalSettings.Opacity,
+        //        IconSize = defaultGlobalSettings.IconSize,
+        //        IconTextSize = defaultGlobalSettings.IconTextSize
+        //    };
+        //}
 
 
     }
@@ -316,6 +336,8 @@ namespace Layouter.Services
         public HorizontalAlignment TitleAlignment { get; set; }
         public double Opacity { get; set; }
         public IconSize IconSize { get; set; }
+        public double IconTextSize { get; set; } = 12d;
+
     }
 
 }

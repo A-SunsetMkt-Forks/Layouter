@@ -8,7 +8,8 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/Styles/TrayIconResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            
+
+            <converters:EqualityToVisibilityConverter x:Key="EqualityToVisibilityConverter"/>
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
             <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>

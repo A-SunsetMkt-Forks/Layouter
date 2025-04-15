@@ -20,14 +20,23 @@ namespace Layouter.Services
     {
         private TaskbarIcon notifyIcon;
         private readonly TrayIconViewModel viewModel;
+        private bool isInitialized = false;
 
-        public TrayIconService(TrayIconViewModel vm)
+        private static readonly Lazy<TrayIconService> instance = new Lazy<TrayIconService>(() => new TrayIconService());
+        public static TrayIconService Instance => instance.Value;
+
+        public TrayIconService()
         {
-            this.viewModel = vm;
+            this.viewModel = new TrayIconViewModel();
         }
 
         public void Initialize()
         {
+            if (isInitialized)
+            {
+                return;
+            }
+
             // 从资源中获取托盘图标
             notifyIcon = Application.Current.FindResource("TrayIcon") as TaskbarIcon;
 
@@ -35,7 +44,10 @@ namespace Layouter.Services
             {
                 // 设置数据上下文
                 notifyIcon.DataContext = viewModel;
-                notifyIcon.Icon = CreateIconFromFluentIcon();
+                notifyIcon.Icon = IconUtil.CreateIconFromFluentIcon(FluentIcons.Common.Icon.LayoutCellFour, Brushes.LightBlue);
+
+                viewModel.SetTrayIcon(notifyIcon); 
+                isInitialized = true;
             }
             else
             {
@@ -43,38 +55,26 @@ namespace Layouter.Services
             }
         }
 
-        private System.Drawing.Icon CreateIconFromFluentIcon()
+        /// <summary>
+        /// 显示气泡提示
+        /// </summary>
+        /// <param name="title">标题</param>
+        /// <param name="message">消息内容</param>
+        /// <param name="icon">图标类型</param>
+        public void ShowBalloonTip(string title, string message, BalloonIcon icon)
         {
-
-            var fluentIcon = new FluentIcon()
+            if (notifyIcon == null || !isInitialized)
             {
-                Icon = FluentIcons.Common.Icon.AppFolder, // 选择合适的图标
-                Foreground = Brushes.Black,
-                IconSize = FluentIcons.Common.IconSize.Size16,
-                Width = 16,
-                Height = 16
-            };
+                return;
+            }
 
-            // 渲染FluentIcon到一个RenderTargetBitmap
-            fluentIcon.Measure(new Size(16, 16));
-            fluentIcon.Arrange(new Rect(0, 0, 16, 16));
-
-            var renderBitmap = new RenderTargetBitmap(16, 16, 96, 96, PixelFormats.Pbgra32);
-            renderBitmap.Render(fluentIcon);
-
-            // 将RenderTargetBitmap转换为Icon
-            using (MemoryStream stream = new MemoryStream())
+            try
             {
-                var encoder = new PngBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
-                encoder.Save(stream);
-                stream.Position = 0;
-
-                // 使用System.Drawing创建图标
-                using (var bitmap = new System.Drawing.Bitmap(stream))
-                {
-                    return System.Drawing.Icon.FromHandle(bitmap.GetHicon());
-                }
+                notifyIcon.ShowBalloonTip(title, message, icon);
+            }
+            catch (Exception ex)
+            {
+                Log.Information($"显示气泡提示失败: {ex.Message}");
             }
         }
 

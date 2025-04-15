@@ -54,6 +54,11 @@ namespace Layouter.Views
             WindowManagerService.Instance.RegisterWindow(this);
         }
 
+        public DesktopManagerWindow(string windowId) : this()
+        {
+            WindowId = windowId;
+        }
+
         public string WindowId { get; set; }
 
         #region 分区窗口事件
@@ -69,8 +74,9 @@ namespace Layouter.Views
 
             // 加载分区数据
             LoadPartitionData();
-            // 加载分区设置
-            LoadPartitionSettings();
+
+            // 设置分区样式
+            ApplyStyleSettings();
         }
 
         private void DesktopManagerWindow_PreviewDragOver(object sender, DragEventArgs e)
@@ -150,6 +156,9 @@ namespace Layouter.Views
             {
                 // 使用现有的服务保存分区数据
                 PartitionDataService.Instance.SavePartitionData(this);
+
+                //保存分区样式
+                PartitionSettingsService.Instance.SaveWindowSettings(vm);
             }
             catch (Exception ex)
             {
@@ -276,15 +285,6 @@ namespace Layouter.Views
             }
         }
 
-        private void ChangeBackground_Click(object sender, RoutedEventArgs e)
-        {
-            // 关闭设置菜单
-            SettingsPopup.IsOpen = false;
-
-            // TODO: 实现背景颜色修改功能
-            MessageBox.Show("背景颜色修改功能暂未实现", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
         private void AutoArrange_Click(object sender, RoutedEventArgs e)
         {
             // 关闭设置菜单
@@ -311,7 +311,7 @@ namespace Layouter.Views
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             // 支持拖动窗口
-            if (e.ClickCount == 1)
+            if (e.ClickCount == 1 && Mouse.LeftButton == MouseButtonState.Pressed)
             {
                 this.DragMove();
             }
@@ -713,7 +713,6 @@ namespace Layouter.Views
                 // 处理双击事件 - 打开文件或程序
                 if (e.ClickCount == 2)
                 {
-                    OpenFileOrProgram(icon.IconPath);
                     e.Handled = true;
                     return;
                 }
@@ -866,17 +865,83 @@ namespace Layouter.Views
 
         #endregion
 
-        private void LoadPartitionSettings()
+        #region 分区窗口样式
+
+        private void ApplyStyleSettings()
         {
             try
             {
-                // 加载此分区窗口的特定设置
-                PartitionSettingsService.Instance.LoadSettings(vm, false);
+                // 使用PartitionSettingsService应用样式配置
+                PartitionSettingsService.Instance.ApplySettingsToViewModel(WindowId, vm);
+
+                // 更新图标大小
+                UpdateIconSizes();
             }
             catch (Exception ex)
             {
-                Log.Information($"加载分区设置时出错: {ex.Message}");
+                Log.Information($"应用样式配置时出错: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// 更新图标大小
+        /// </summary>
+        public void UpdateIconSizes()
+        {
+            try
+            {
+                Size iconSize;
+                switch (vm.IconSize)
+                {
+                    case IconSize.Small:
+                        iconSize = new Size(32, 32);
+                        break;
+                    case IconSize.Large:
+                        iconSize = new Size(64, 64);
+                        break;
+                    case IconSize.Medium:
+                    default:
+                        iconSize = new Size(48, 48);
+                        break;
+                }
+
+                // 更新所有图标的尺寸
+                foreach (var icon in vm.Icons)
+                {
+                    icon.Size = iconSize;
+                    icon.TextSize = vm.IconTextSize;
+                }
+
+                // 重新排列图标
+                vm.ArrangeIcons();
+            }
+            catch (Exception ex)
+            {
+                Log.Information($"更新图标大小时出错: {ex.Message}");
+            }
+        }
+        #endregion
+
+        #region 数据同步
+
+        public void Sync(DesktopManagerWindow window)
+        {
+            if (window == null)
+            {
+                return;
+            }
+
+            vm = window.DataContext as DesktopManagerViewModel;
+            if (vm != null)
+            {
+                vm.windowId = window.WindowId;
+                DataContext = vm;
+            }
+
+            // 应用样式设置
+            ApplyStyleSettings();
+        }
+
+        #endregion
     }
 }
