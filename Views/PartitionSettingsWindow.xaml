@@ -41,8 +41,6 @@
 
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <CheckBox x:Name="ApplyToAllCheckBox" Content="应用到所有分区窗口" Margin="5,10" />
-
                 <!-- 标题栏设置 -->
                 <GroupBox Header="标题栏设置">
                     <Grid>

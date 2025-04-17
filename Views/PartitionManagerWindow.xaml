@@ -1,0 +1,117 @@
+﻿<Window x:Class="Layouter.Views.PartitionManagerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Layouter.Views"
+        xmlns:vm="clr-namespace:Layouter.ViewModels"
+        xmlns:FluentIcons="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
+        xmlns:converters="clr-namespace:Layouter.Utility"
+        mc:Ignorable="d"
+        Title="分区管理" Height="500" Width="700" WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <Style x:Key="HeaderTextBlockStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,10,0,5"/>
+        </Style>
+
+        <Style x:Key="SectionTextBlockStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,10,0,5"/>
+        </Style>
+
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="MinWidth" Value="80"/>
+        </Style>
+
+        <!-- 数据网格样式 -->
+        <Style x:Key="LightBorderDataGridStyle" TargetType="DataGrid">
+            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#E0E0E0"/>
+            <Setter Property="VerticalGridLinesBrush" Value="#E0E0E0"/>
+            <Setter Property="RowBackground" Value="White"/>
+            <Setter Property="AlternatingRowBackground" Value="#F5F5F5"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 全局样式设置 -->
+        <GroupBox  Header="全局样式设置" Grid.Row="0">
+            <StackPanel  Margin="0,10,0,0">
+                <Grid Margin="0,5,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <CheckBox Content="启用全局样式（所有分区使用相同样式）" IsChecked="{Binding EnableGlobalStyle}" Margin="0,5"/>
+                        <TextBlock Text="全局样式将应用于所有分区窗口，新建的分区也将使用此样式。" Margin="20,0,0,5" TextWrapping="Wrap" Foreground="#666"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Content="编辑全局样式" Style="{StaticResource ActionButtonStyle}" Click="EditGlobalStyle_Click"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- 分区列表 -->
+        <Grid  Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Text="分区列表" Style="{StaticResource SectionTextBlockStyle}"/>
+
+            <DataGrid Grid.Row="1" ItemsSource="{Binding Partitions}" AutoGenerateColumns="False" 
+                      CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Extended"
+                      SelectedItem="{Binding SelectedPartition}" SelectionChanged="DataGrid_SelectionChanged">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="选择" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="50"/>
+                    <DataGridTextColumn Header="分区ID" Binding="{Binding PartitionId}" Width="200" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="标题" Binding="{Binding Title}" Width="150" IsReadOnly="True"/>
+                    <DataGridCheckBoxColumn Header="显示" Binding="{Binding IsVisible, UpdateSourceTrigger=PropertyChanged}" Width="50"/>
+                    <DataGridTemplateColumn Header="操作" Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="编辑" Margin="2" Padding="5,2" Click="EditPartition_Click"/>
+                                    <Button Content="{Binding IsVisible, Converter={StaticResource BoolToVisibilityTextConverter}}" 
+                                            Margin="2" Padding="5,2" Click="ToggleVisibility_Click"/>
+                                    <Button Content="删除" Margin="2" Padding="5,2" Click="DeletePartition_Click"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <!-- 批量操作 -->
+        <StackPanel Grid.Row="2" Margin="0,5,0,0">
+            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                <Button Content="{Binding AllSelected, Converter={StaticResource BoolToSelectionTextConverter}}" 
+                        Style="{StaticResource ActionButtonStyle}" Click="ToggleSelectAll_Click"/>
+                <Button Content="{Binding AnySelectedVisible, Converter={StaticResource BoolToVisibilityTextConverter}}" 
+                        Style="{StaticResource ActionButtonStyle}" Click="ToggleVisibilitySelected_Click"/>
+                <Button Content="批量删除" Style="{StaticResource ActionButtonStyle}" Click="DeleteSelected_Click"/>
+            </StackPanel>
+        </StackPanel>
+
+
+    </Grid>
+</Window>

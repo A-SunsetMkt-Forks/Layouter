@@ -70,7 +70,7 @@ namespace Layouter.Services
             menuItems["NewPartition"] = newPartitionItem;
 
             // 分区设置菜单项
-            var partitionSettingsItem = CreateMenuItem("分区设置", IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.Settings, Colors.DodgerBlue));
+            var partitionSettingsItem = CreateMenuItem("分区管理", IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.Settings, Colors.DodgerBlue));
             partitionSettingsItem.Click += (s, e) => viewModel.WindowSettingCommand.Execute(null);
             trayMenu.Items.Add(partitionSettingsItem);
             menuItems["PartitionSettings"] = partitionSettingsItem;
@@ -82,7 +82,7 @@ namespace Layouter.Services
 
             // 自启动状态切换菜单项
             bool isAutoStartEnabled = GeneralSettingsService.Instance.GetAutoStartEnabled();
-            var autoStartIcon = isAutoStartEnabled ? IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.Bookmark, Colors.DodgerBlue) : IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.BookmarkOff, Colors.DodgerBlue);
+            var autoStartIcon = isAutoStartEnabled ?IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.Bookmark, Colors.DodgerBlue) : IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.BookmarkOff, Colors.DodgerBlue);
             var autoStartToggleItem = CreateMenuItem(isAutoStartEnabled ? "开启" : "停止", autoStartIcon);
             autoStartToggleItem.Click += (s, e) => ToggleAutoStart(autoStartToggleItem);
             autoStartMenuItem.Items.Add(autoStartToggleItem);
@@ -130,6 +130,7 @@ namespace Layouter.Services
             exitItem.Click += (s, e) => viewModel.ExitCommand.Execute(null);
             trayMenu.Items.Add(exitItem);
         }
+
 
         /// <summary>
         /// 获取托盘菜单
@@ -179,6 +180,7 @@ namespace Layouter.Services
                     Log.Information($"加载菜单[{header}]的图标时出错: {ex.Message}");
                 }
             }
+
 
             return menuItem;
         }

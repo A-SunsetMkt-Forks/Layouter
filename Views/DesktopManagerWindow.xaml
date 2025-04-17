@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:vm="clr-namespace:Layouter.ViewModels"
-        xmlns:local="clr-namespace:Layouter.Views"
+        xmlns:local="clr-namespace:Layouter.Views" 
+        xmlns:FluentIcons="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
         mc:Ignorable="d"
         Title="分区管理器"
         Height="240" Width="460"
@@ -24,8 +25,6 @@
         <ContextMenu x:Key="PartitionContextMenu">
             <MenuItem Header="自动排列图标" Click="AutoArrange_Click"/>
             <MenuItem Header="对齐所有分区" Click="AlignPartitions_Click"/>
-            <Separator/>
-            <MenuItem Header="关闭分区" Click="ClosePartition_Click"/>
         </ContextMenu>
 
         <ContextMenu x:Key="IconContextMenu">
@@ -83,16 +82,17 @@
                         <StackPanel Orientation="Horizontal" Grid.Column="1">
                             <!-- 新增分区按钮 -->
                             <Button Width="30" Height="30" ToolTip="新建分区"  Background="Transparent" BorderThickness="0" Click="NewPartition_Click">
-                                <TextBlock Text="+" FontSize="16" FontWeight="Bold" Foreground="{Binding TitleForeground}" />
+                                <FluentIcons:SymbolIcon Symbol="Add" FontSize="16" Foreground="{Binding TitleForeground}" />
                             </Button>
 
-                            <!-- 关闭按钮 -->
-                            <Button Content="×" Width="30" Height="30" HorizontalAlignment="Right"  Click="ClosePartition_Click" 
-                                    Background="Transparent" BorderThickness="0" FontSize="16" Foreground="{Binding TitleForeground}"/>
+                            <!-- 锁定按钮 -->
+                            <Button Width="30" Height="30" ToolTip="未锁定"  Background="Transparent" BorderThickness="0" Click="LockButton_Click" x:Name="LockButton">
+                                <FluentIcons:SymbolIcon Symbol="LockOpen" FontSize="16" Foreground="{Binding TitleForeground}" x:Name="LockIcon" />
+                            </Button>
 
                             <!-- 设置按钮 -->
                             <Button Width="30" Height="30" ToolTip="设置" Background="Transparent" BorderThickness="0" Click="Settings_Click" x:Name="SettingsButton">
-                                <TextBlock Text="⚙" FontSize="16" Foreground="{Binding TitleForeground}" />
+                                <FluentIcons:SymbolIcon Symbol="Settings" FontSize="16" Foreground="{Binding TitleForeground}" />
                             </Button>
                         </StackPanel>
 

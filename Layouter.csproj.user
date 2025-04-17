@@ -7,7 +7,15 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="Views\PartitionManagerWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
     <Page Update="Styles\TrayIconResources.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\PartitionManagerWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

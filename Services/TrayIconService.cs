@@ -25,6 +25,7 @@ namespace Layouter.Services
         private static readonly Lazy<TrayIconService> instance = new Lazy<TrayIconService>(() => new TrayIconService());
         public static TrayIconService Instance => instance.Value;
 
+
         public TrayIconService()
         {
             this.viewModel = new TrayIconViewModel();
@@ -46,7 +47,7 @@ namespace Layouter.Services
                 notifyIcon.DataContext = viewModel;
                 notifyIcon.Icon = IconUtil.CreateIconFromFluentIcon(FluentIcons.Common.Icon.LayoutCellFour, Brushes.LightBlue);
 
-                viewModel.SetTrayIcon(notifyIcon); 
+                viewModel.SetTrayIcon(notifyIcon);
                 isInitialized = true;
             }
             else

@@ -6,6 +6,7 @@ using Layouter.Models;
 using Layouter.ViewModels;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Layouter.Services
 {
@@ -43,7 +44,8 @@ namespace Layouter.Services
                     TitleAlignment = viewModel.TitleAlignment,
                     Opacity = viewModel.Opacity,
                     IconSize = viewModel.IconSize,
-                    IconTextSize = viewModel.IconTextSize
+                    IconTextSize = viewModel.IconTextSize,
+                    IsLocked = viewModel.IsLocked
                 };
 
                 string json = JsonConvert.SerializeObject(settings, Formatting.Indented,
@@ -69,6 +71,13 @@ namespace Layouter.Services
                 return;
             }
 
+            //如果启用了全局样式，则不保存个性化样式
+            bool enableGlobalStyle = GeneralSettingsService.Instance.GetEnableGlobalStyle();
+            if(enableGlobalStyle)
+            {
+                return;
+            }
+
             try
             {
                 // 读取现有的所有窗口配置
@@ -86,7 +95,8 @@ namespace Layouter.Services
                     TitleAlignment = viewModel.TitleAlignment,
                     Opacity = viewModel.Opacity,
                     IconSize = viewModel.IconSize,
-                    IconTextSize = viewModel.IconTextSize
+                    IconTextSize = viewModel.IconTextSize,
+                    IsLocked = viewModel.IsLocked
                 };
 
                 // 保存所有窗口配置
@@ -119,7 +129,8 @@ namespace Layouter.Services
                         TitleAlignment = defaultSettings.TitleAlignment,
                         Opacity = defaultSettings.Opacity,
                         IconSize = defaultSettings.IconSize,
-                        IconTextSize = defaultSettings.IconTextSize
+                        IconTextSize = defaultSettings.IconTextSize,
+                        IsLocked = defaultSettings.IsLocked,
                     });
 
                     return defaultSettings;
@@ -145,31 +156,30 @@ namespace Layouter.Services
             try
             {
                 // 首先检查是否启用全局样式
-                var globalSettings = LoadGlobalSettings();
-                if (globalSettings.EnableGlobalStyle)
+                bool flag = GeneralSettingsService.Instance.GetEnableGlobalStyle();
+                if (flag)
                 {
-                    // 如果启用全局样式，直接返回全局样式配置
+                    var globalSettings = LoadGlobalSettings();
                     return globalSettings;
                 }
 
-                // 否则尝试加载窗口特定的样式配置
                 if (!File.Exists(styleFilePath))
                 {
                     // 如果个性化配置文件不存在，返回全局配置
-                    return globalSettings;
+                    return LoadGlobalSettings();
                 }
 
                 string json = File.ReadAllText(styleFilePath);
                 var allSettings = JsonConvert.DeserializeObject<Dictionary<string, PartitionSettings>>(json);
 
-                // 如果找到窗口特定的配置，返回它
+                // 返回窗口特定的配置
                 if (allSettings != null && allSettings.ContainsKey(windowId))
                 {
                     return allSettings[windowId];
                 }
 
                 // 否则返回全局配置
-                return globalSettings;
+                return LoadGlobalSettings();
             }
             catch (Exception ex)
             {
@@ -205,8 +215,14 @@ namespace Layouter.Services
         /// <summary>
         /// 应用样式配置到ViewModel
         /// </summary>
-        public void ApplySettingsToViewModel(string windowId, DesktopManagerViewModel viewModel)
+        public void ApplySettingsToViewModel(DesktopManagerViewModel viewModel)
         {
+            if (viewModel == null || string.IsNullOrEmpty(viewModel.windowId))
+            {
+                return;
+            }
+
+            var windowId = viewModel.windowId;
             try
             {
                 // 加载适用的样式配置
@@ -221,6 +237,7 @@ namespace Layouter.Services
                 viewModel.Opacity = settings.Opacity;
                 viewModel.IconSize = settings.IconSize;
                 viewModel.IconTextSize = settings.IconTextSize;
+                viewModel.IsLocked = settings.IsLocked;
 
                 Log.Information($"已应用样式配置到窗口 {windowId}");
             }
@@ -231,13 +248,40 @@ namespace Layouter.Services
         }
 
         /// <summary>
+        /// 更新样式配置到指定ViewModel
+        /// </summary>
+        public DesktopManagerViewModel UpdateViewModelSettings(DesktopManagerViewModel viewModel, PartitionSettings settings)
+        {
+            if (viewModel == null)
+            {
+                return null;
+            }
+            else if (settings == null)
+            {
+                return viewModel;
+            }
+
+            viewModel.TitleForeground = new SolidColorBrush(settings.TitleForeground);
+            viewModel.TitleBackground = new SolidColorBrush(settings.TitleBackground);
+            viewModel.TitleFont = new FontFamily(settings.TitleFont);
+            viewModel.TitleAlignment = settings.TitleAlignment;
+            viewModel.TitleFontSize = settings.TitleFontSize;
+            viewModel.Opacity = settings.Opacity;
+            viewModel.IconSize = settings.IconSize;
+            viewModel.IconTextSize = settings.IconTextSize;
+            viewModel.IsLocked = settings.IsLocked;
+
+            return viewModel;
+        }
+
+
+        /// <summary>
         /// 获取默认的全局样式配置
         /// </summary>
         private GlobalPartitionSettings GetDefaultGlobalSettings()
         {
             return new GlobalPartitionSettings
             {
-                EnableGlobalStyle = true,
                 TitleForeground = Colors.White,
                 TitleBackground = Colors.DodgerBlue,
                 TitleFont = "Microsoft YaHei",
@@ -245,7 +289,8 @@ namespace Layouter.Services
                 TitleFontSize = 14d,
                 Opacity = 0.95,
                 IconSize = IconSize.Medium,
-                IconTextSize = 12d
+                IconTextSize = 12d,
+                IsLocked = false
             };
         }
 
@@ -261,83 +306,8 @@ namespace Layouter.Services
             }
         }
 
-        ///// <summary>
-        ///// 兼容旧版本的方法
-        ///// </summary>
-        //public void LoadSettings(DesktopManagerViewModel viewModel, bool isGlobal = false)
-        //{
-        //    try
-        //    {
-        //        if (isGlobal)
-        //        {
-        //            var settings = LoadGlobalSettings();
-
-        //            viewModel.TitleForeground = new SolidColorBrush(settings.TitleForeground);
-        //            viewModel.TitleBackground = new SolidColorBrush(settings.TitleBackground);
-        //            viewModel.TitleFont = new FontFamily(settings.TitleFont);
-        //            viewModel.TitleAlignment = settings.TitleAlignment;
-        //            viewModel.TitleFontSize = settings.TitleFontSize;
-        //            viewModel.Opacity = settings.Opacity;
-        //            viewModel.IconSize = settings.IconSize;
-        //            viewModel.IconTextSize = settings.IconTextSize;
-        //        }
-        //        else
-        //        {
-        //            // 由于没有windowId，这里只能加载全局配置
-        //            var settings = LoadGlobalSettings();
-
-        //            viewModel.TitleForeground = new SolidColorBrush(settings.TitleForeground);
-        //            viewModel.TitleBackground = new SolidColorBrush(settings.TitleBackground);
-        //            viewModel.TitleFont = new FontFamily(settings.TitleFont);
-        //            viewModel.TitleAlignment = settings.TitleAlignment;
-        //            viewModel.TitleFontSize = settings.TitleFontSize;
-        //            viewModel.Opacity = settings.Opacity;
-        //            viewModel.IconSize = settings.IconSize;
-        //            viewModel.IconTextSize = settings.IconTextSize;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Log.Information($"加载分区设置时出错: {ex.Message}");
-        //    }
-        //}
-
-        //// 兼容旧版本的方法
-        //public PartitionSettings GetDefaultSettings()
-        //{
-        //    var defaultGlobalSettings = GetDefaultGlobalSettings();
-        //    return new PartitionSettings
-        //    {
-        //        TitleForeground = defaultGlobalSettings.TitleForeground,
-        //        TitleBackground = defaultGlobalSettings.TitleBackground,
-        //        TitleFont = defaultGlobalSettings.TitleFont,
-        //        TitleAlignment = defaultGlobalSettings.TitleAlignment,
-        //        TitleFontSize = defaultGlobalSettings.TitleFontSize,
-        //        Opacity = defaultGlobalSettings.Opacity,
-        //        IconSize = defaultGlobalSettings.IconSize,
-        //        IconTextSize = defaultGlobalSettings.IconTextSize
-        //    };
-        //}
-
-
     }
 
-    public class GlobalPartitionSettings : PartitionSettings
-    {
-        public bool EnableGlobalStyle { get; set; } = true;
-    }
 
-    public class PartitionSettings
-    {
-        public Color TitleForeground { get; set; }
-        public Color TitleBackground { get; set; }
-        public string TitleFont { get; set; }
-        public double TitleFontSize { get; set; }
-        public HorizontalAlignment TitleAlignment { get; set; }
-        public double Opacity { get; set; }
-        public IconSize IconSize { get; set; }
-        public double IconTextSize { get; set; } = 12d;
-
-    }
 
 }

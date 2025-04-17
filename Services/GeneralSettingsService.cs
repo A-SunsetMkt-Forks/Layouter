@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -21,6 +22,8 @@ namespace Layouter.Services
         private readonly string settingsFolder;
         private readonly string settingsFilePath;
         private GeneralSettings settings;
+
+        public event EventHandler<PartitionVisibilityChangedEventArgs> PartitionVisibilityChanged;
 
         private GeneralSettingsService()
         {
@@ -140,6 +143,109 @@ namespace Layouter.Services
         {
             // 确保系统中的自启动设置与配置文件一致
             ApplyAutoStartSetting(settings.AutoStartEnabled);
+        }
+
+        /// <summary>
+        /// 获取全局样式启用状态
+        /// </summary>
+        public bool GetEnableGlobalStyle()
+        {
+            return settings.EnableGlobalStyle;
+        }
+
+        /// <summary>
+        /// 设置全局样式启用状态
+        /// </summary>
+        public void SetEnableGlobalStyle(bool enabled)
+        {
+            if (settings.EnableGlobalStyle != enabled)
+            {
+                settings.EnableGlobalStyle = enabled;
+                SaveSettings();
+            }
+        }
+
+        /// <summary>
+        /// 获取分区窗口显示状态
+        /// </summary>
+        public bool GetPartitionVisibility(string partitionId)
+        {
+            if (settings.PartitionVisibility.TryGetValue(partitionId, out bool isVisible))
+            {
+                return isVisible;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 设置分区窗口显示状态
+        /// </summary>
+        public void SetPartitionVisibility(string partitionId, bool isVisible)
+        {
+            //新增项
+            if (!settings.PartitionVisibility.ContainsKey(partitionId))
+            {
+                settings.PartitionVisibility.Add(partitionId, isVisible);
+                SaveSettings();
+                return;
+            }
+
+            bool oldValue = GetPartitionVisibility(partitionId);
+
+            if (oldValue != isVisible)
+            {
+                settings.PartitionVisibility[partitionId] = isVisible;
+                SaveSettings();
+
+                PartitionVisibilityChanged?.Invoke(this, new PartitionVisibilityChangedEventArgs(partitionId, isVisible));
+            }
+        }
+
+        /// <summary>
+        /// 批量设置分区窗口显示状态
+        /// </summary>
+        public void SetPartitionVisibilityBatch(IEnumerable<string> partitionIds, bool isVisible)
+        {
+            bool hasChanges = false;
+
+            foreach (var partitionId in partitionIds)
+            {
+                bool oldValue = GetPartitionVisibility(partitionId);
+
+                if (oldValue != isVisible)
+                {
+                    settings.PartitionVisibility[partitionId] = isVisible;
+                    hasChanges = true;
+
+                    PartitionVisibilityChanged?.Invoke(this, new PartitionVisibilityChangedEventArgs(partitionId, isVisible));
+                }
+            }
+
+            if (hasChanges)
+            {
+                SaveSettings();
+            }
+        }
+
+        /// <summary>
+        /// 获取所有分区窗口显示状态
+        /// </summary>
+        public Dictionary<string, bool> GetAllPartitionVisibility()
+        {
+            return new Dictionary<string, bool>(settings.PartitionVisibility);
+        }
+
+        /// <summary>
+        /// 移除分区窗口的显示状态
+        /// </summary>
+        public void RemovePartitionVisibility(string partitionId)
+        {
+            if (settings.PartitionVisibility.ContainsKey(partitionId))
+            {
+                settings.PartitionVisibility.Remove(partitionId);
+                SaveSettings();
+            }
         }
     }
 

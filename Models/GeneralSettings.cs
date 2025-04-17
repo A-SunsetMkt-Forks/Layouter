@@ -15,6 +15,15 @@ namespace Layouter.Models
         /// 是否开机自启动
         /// </summary>
         public bool AutoStartEnabled { get; set; } = false;
-    }
 
+        /// <summary>
+        /// 是否启用全局样式
+        /// </summary>
+        public bool EnableGlobalStyle { get; set; } = false;
+
+        /// <summary>
+        /// 分区窗口显示状态字典
+        /// </summary>
+        public Dictionary<string, bool> PartitionVisibility { get; set; } = new Dictionary<string, bool>();
+    }
 }

@@ -43,19 +43,8 @@ namespace Layouter.Views
             originalIconSize = vm.IconSize;
             originalIconTextSize = vm.IconTextSize;
 
-            if (isGlobalSettings)
-            {
-                var globalSettings = PartitionSettingsService.Instance.LoadGlobalSettings();
-                this.isGlobalSettings = globalSettings.EnableGlobalStyle;
-
-            }
-
             // 初始化UI
             InitializeUI();
-
-            // 设置全局设置选项的可见性
-            ApplyToAllCheckBox.Visibility = isGlobalSettings ? Visibility.Visible : Visibility.Collapsed;
-            ApplyToAllCheckBox.IsChecked = isGlobalSettings;
 
             // 设置窗口标题
             this.Title = isGlobalSettings ? "全局分区设置" : "分区设置";
@@ -248,20 +237,23 @@ namespace Layouter.Views
                 icon.TextSize = vm.IconTextSize;
             }
 
+            //Todo：检查后删除
             // 如果是全局设置且选择了应用到所有窗口
-            if (isGlobalSettings)
-            {
-                bool enableGlobalStyle = ApplyToAllCheckBox.IsChecked ?? true;
+            //if (isGlobalSettings)
+            //{
+            //    bool enableGlobalStyle = ApplyToAllCheckBox.IsChecked ?? true;
 
-                PartitionSettingsService.Instance.SaveGlobalSettings(vm);
+            //    PartitionSettingsService.Instance.SaveGlobalSettings(vm);
 
-                // 如果启用全局样式，应用到所有窗口
-                if (enableGlobalStyle)
-                {
-                    WindowManagerService.Instance.ApplyGlobalSettingsToAllWindows();
-                }
-            }
-            else if (!string.IsNullOrEmpty(vm.windowId))
+            //    // 如果启用全局样式，应用到所有窗口
+            //    if (enableGlobalStyle)
+            //    {
+            //        WindowManagerService.Instance.ApplyGlobalSettingsToAllWindows();
+            //    }
+            //}
+            //else 
+            
+            if (!string.IsNullOrEmpty(vm.windowId))
             {
                 // 保存设置到配置文件
                 PartitionSettingsService.Instance.SaveSettings(vm, isGlobalSettings);

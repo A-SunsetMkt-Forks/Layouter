@@ -66,7 +66,43 @@ namespace Layouter.Utility
             throw new NotImplementedException();
         }
     }
-    
+
+    public class BoolToVisibilityTextConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool isVisible)
+            {
+                return isVisible ? "隐藏" : "显示";
+            }
+
+            return "显示";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class BoolToSelectionTextConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool allSelected)
+            {
+                return allSelected ? "取消全选" : "全选";
+            }
+
+            return "全选";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public class PointToMarginConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

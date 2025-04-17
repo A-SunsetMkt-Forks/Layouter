@@ -32,11 +32,12 @@ namespace Layouter.Views
         public DesktopManagerWindow()
         {
             InitializeComponent();
+            WindowId = Guid.NewGuid().ToString();
 
             // 创建ViewModel并设置为DataContext
             vm = new DesktopManagerViewModel
             {
-                Name = $"分区 {DateTime.Now.ToString("HH:mm:ss")}"
+                Name = "新分区"
             };
 
             DataContext = vm;
@@ -46,6 +47,11 @@ namespace Layouter.Views
             PreviewDragOver += DesktopManagerWindow_PreviewDragOver;
             MouseRightButtonDown += DesktopManagerWindow_MouseRightButtonDown;
             Closing += Window_Closing;
+
+            vm.LockStateChanged += (s, e) =>
+            {
+                UpdateLockState(vm.IsLocked);
+            };
 
             // 初始化拖拽状态
             isDragging = false;
@@ -171,7 +177,7 @@ namespace Layouter.Views
             try
             {
                 // 使用现有的服务加载分区数据
-                PartitionDataService.Instance.LoadPartitionData(this);
+                PartitionDataService.Instance.LoadPartitionData(this, this.WindowId);
             }
             catch (Exception ex)
             {
@@ -229,8 +235,9 @@ namespace Layouter.Views
             {
                 // 创建新的分区窗口
                 var window = new DesktopManagerWindow();
-                window.Show();
+                PartitionDataService.Instance.ShowWindow(window);
 
+                Task.Delay(100).Wait();
                 // 在新窗口显示后让标题变为可编辑状态
                 window.EnableTitleEditOnFirstLoad();
 
@@ -303,9 +310,10 @@ namespace Layouter.Views
             WindowManagerService.Instance.ArrangeWindows();
         }
 
-        private void ClosePartition_Click(object sender, RoutedEventArgs e)
+
+        private void LockButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            vm.IsLocked = !vm.IsLocked;
         }
 
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -313,7 +321,10 @@ namespace Layouter.Views
             // 支持拖动窗口
             if (e.ClickCount == 1 && Mouse.LeftButton == MouseButtonState.Pressed)
             {
-                this.DragMove();
+                if (!vm.IsLocked)
+                {
+                    this.DragMove();
+                }
             }
         }
 
@@ -502,8 +513,7 @@ namespace Layouter.Views
                                 Log.Information("图标可能被拖到桌面或其他应用");
 
                                 // 恢复桌面图标 - 从隐藏文件夹中复制回桌面
-                                var desktopIconService = new DesktopIconService();
-                                bool restored = desktopIconService.ShowDesktopIcon(originalFilePath);
+                                bool restored = DesktopIconService.Instance.ShowDesktopIcon(originalFilePath);
 
                                 if (!restored)
                                 {
@@ -578,6 +588,8 @@ namespace Layouter.Views
                             return;
                         }
 
+                        var iconSize = viewModel.GetIconSize();
+
                         // 创建新的图标对象
                         if (ShortCutUtil.IsShortcutPath(filePath))
                         {
@@ -587,7 +599,8 @@ namespace Layouter.Views
                                 Name = Path.GetFileNameWithoutExtension(filePath),
                                 IconPath = DesktopIconService.Instance.CombineHiddenPathWithIconPath(filePath),
                                 Position = new Point(x, y),
-                                Size = new Size(64, 64)
+                                Size = iconSize,
+                                TextSize = viewModel.IconTextSize
                             };
                         }
                         else
@@ -598,7 +611,8 @@ namespace Layouter.Views
                                 Name = ShellUtil.GetSpecialFolderDisplayName(filePath),
                                 IconPath = filePath,
                                 Position = new Point(x, y),
-                                Size = new Size(64, 64),
+                                Size = iconSize,
+                                TextSize = viewModel.IconTextSize,
                                 IconType = IconType.Shell
                             };
                         }
@@ -872,10 +886,13 @@ namespace Layouter.Views
             try
             {
                 // 使用PartitionSettingsService应用样式配置
-                PartitionSettingsService.Instance.ApplySettingsToViewModel(WindowId, vm);
+                PartitionSettingsService.Instance.ApplySettingsToViewModel(vm);
 
                 // 更新图标大小
                 UpdateIconSizes();
+
+                // 更新锁定状态
+                UpdateLockState(vm.IsLocked);
             }
             catch (Exception ex)
             {
@@ -920,6 +937,26 @@ namespace Layouter.Views
                 Log.Information($"更新图标大小时出错: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// 更新锁定状态
+        /// </summary>
+        private void UpdateLockState(bool isLocked)
+        {
+            LockIcon.Symbol = isLocked ? FluentIcons.Common.Symbol.LockClosed : FluentIcons.Common.Symbol.LockOpen;
+            LockButton.ToolTip = isLocked ? "已锁定" : "未锁定";
+
+            // 更新窗口可拖动和可调整大小状态
+            if (isLocked)
+            {
+                ResizeMode = ResizeMode.NoResize;
+            }
+            else
+            {
+                ResizeMode = ResizeMode.CanResizeWithGrip;
+            }
+        }
+
         #endregion
 
         #region 数据同步
@@ -943,5 +980,6 @@ namespace Layouter.Views
         }
 
         #endregion
+
     }
 }

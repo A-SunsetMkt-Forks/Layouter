@@ -162,6 +162,11 @@ namespace Layouter.Services
             }
         }
 
+        public DesktopManagerWindow GetWindowById(string windowId)
+        {
+            return managedWindows.FirstOrDefault(w => w.WindowId == windowId);
+        }
+
         public DesktopManagerWindow GetWindowAt(Point screenPoint)
         {
             return managedWindows.FirstOrDefault(w => w.IsVisible && new Rect(w.Left, w.Top, w.Width, w.Height).Contains(screenPoint));
@@ -179,6 +184,19 @@ namespace Layouter.Services
             }
             try
             {
+                //还原图标
+                if (window.DataContext is DesktopManagerViewModel viewModel)
+                {
+                    foreach (var icon in viewModel.Icons)
+                    {
+                        bool restored = DesktopIconService.Instance.ShowDesktopIcon(icon.IconPath);
+                        if (restored)
+                        {
+                            Log.Information($"已恢复图标：{icon.IconPath}");
+                        }
+                    }
+                }
+
                 // 删除分区并更新配置
                 PartitionDataService.Instance.RemoveWindow(window.WindowId);
 
@@ -434,62 +452,57 @@ namespace Layouter.Services
             }
         }
 
+
         /// <summary>
-        /// 应用全局样式到所有窗口
+        /// 更新所有窗口样式
         /// </summary>
-        public void ApplyGlobalSettingsToAllWindows()
+        public void UpdateAllWindowStyles()
         {
             try
             {
-                // 加载全局设置
-                var globalSettings = PartitionSettingsService.Instance.LoadGlobalSettings();
+                // 检查是否启用全局样式
+                bool enableGlobalStyle = GeneralSettingsService.Instance.GetEnableGlobalStyle();
+                var viewModels = managedWindows.Select(t => t.DataContext as DesktopManagerViewModel).ToList();
 
-                // 如果未启用全局样式，直接返回
-                if (!globalSettings.EnableGlobalStyle)
+                if (enableGlobalStyle)
                 {
-                    return;
-                }
+                    // 加载全局设置
+                    var globalSettings = PartitionSettingsService.Instance.LoadGlobalSettings();
 
-                // 创建临时ViewModel用于传递设置
-                var tempViewModel = new DesktopManagerViewModel
-                {
-                    TitleForeground = new SolidColorBrush(globalSettings.TitleForeground),
-                    TitleBackground = new SolidColorBrush(globalSettings.TitleBackground),
-                    TitleFont = new FontFamily(globalSettings.TitleFont),
-                    TitleAlignment = globalSettings.TitleAlignment,
-                    TitleFontSize = globalSettings.TitleFontSize,
-                    Opacity = globalSettings.Opacity,
-                    IconSize = globalSettings.IconSize,
-                    IconTextSize = globalSettings.IconTextSize
-                };
-
-                // 应用到所有窗口
-                foreach (var window in GetAllWindows())
-                {
-                    var viewModel = window.DataContext as DesktopManagerViewModel;
-                    if (viewModel != null)
+                    // 应用到所有窗口
+                    foreach (var viewModel in viewModels)
                     {
-                        // 复制设置
-                        viewModel.TitleForeground = tempViewModel.TitleForeground.Clone();
-                        viewModel.TitleBackground = tempViewModel.TitleBackground.Clone();
-                        viewModel.TitleFont = new FontFamily(tempViewModel.TitleFont.Source);
-                        viewModel.TitleAlignment = tempViewModel.TitleAlignment;
-                        viewModel.TitleFontSize = tempViewModel.TitleFontSize;
-                        viewModel.Opacity = tempViewModel.Opacity;
-                        viewModel.IconSize = tempViewModel.IconSize;
-                        viewModel.IconTextSize = tempViewModel.IconTextSize;
-
-                        // 更新图标大小
-                        (window as DesktopManagerWindow)?.UpdateIconSizes();
+                        PartitionSettingsService.Instance.UpdateViewModelSettings(viewModel, globalSettings);
                     }
                 }
-
-                Log.Information("已应用全局样式设置到所有窗口");
+                else
+                {
+                    // 加载每个分区的特定设置
+                    foreach (var vm in viewModels)
+                    {
+                        var settings = PartitionSettingsService.Instance.LoadWindowSettings(vm.windowId);
+                        PartitionSettingsService.Instance.UpdateViewModelSettings(vm, settings);
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Log.Information($"应用全局样式设置到所有窗口时出错: {ex.Message}");
+                Log.Information($"更新所有窗口样式失败: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// 获取分区ViewModel
+        /// </summary>
+        public DesktopManagerViewModel GetDesktopManagerViewModel(string partitionId)
+        {
+            var viewModels = managedWindows.Select(t => t.DataContext as DesktopManagerViewModel).ToList();
+
+            if (viewModels.Any(t => t.windowId.Equals(partitionId)))
+            {
+                return viewModels.Find(t => t.windowId.Equals(partitionId));
+            }
+            return null;
         }
     }
 }

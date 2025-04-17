@@ -58,19 +58,28 @@ namespace Layouter.ViewModels
 
         private void OpenNewWindow()
         {
-            // 创建一个新的分区窗口
-            var window = new DesktopManagerWindow();
+            try
+            {
+                // 创建新的分区窗口
+                var window = new DesktopManagerWindow();
+                PartitionDataService.Instance.ShowWindow(window);
 
-            PartitionDataService.Instance.LoadPartitionData(window, Guid.NewGuid().ToString());
-            window.Show();
+                Task.Delay(100).Wait();
+                // 在新窗口显示后让标题变为可编辑状态
+                window.EnableTitleEditOnFirstLoad();
 
-            // 重新排列窗口
-            WindowManagerService.Instance.ArrangeWindows();
+                Log.Information("已创建新分区窗口");
+            }
+            catch (Exception ex)
+            {
+                Log.Information($"创建新分区窗口时出错: {ex.Message}");
+            }
         }
 
         private void SettingWindow()
         {
-
+            var settingsWindow = new PartitionManagerWindow();
+            settingsWindow.ShowDialog();
         }
 
         private void Exit()

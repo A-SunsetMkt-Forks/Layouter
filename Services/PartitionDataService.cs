@@ -8,6 +8,7 @@ using Layouter.Models;
 using Layouter.Utility;
 using Layouter.ViewModels;
 using Layouter.Views;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Layouter.Services
 {
@@ -124,9 +125,46 @@ namespace Layouter.Services
             {
                 SavePartitionData(window);
             }
+        }
 
-            // 保存窗口列表元数据
-            SaveWindowsMetadata(windows);
+        /// <summary>
+        /// /// <summary>
+        /// 保存窗口元数据
+        /// </summary>
+        /// </summary>
+        /// <param name="windowId">新窗口Id</param>
+        private void SaveMetadata(string windowId)
+        {
+            try
+            {
+                var metadata = GetMetadata();
+                if (metadata == null)
+                {
+                    metadata = new WindowsMetadataDto
+                    {
+                        WindowIds = new List<string>()
+                    };
+                }
+                if (!metadata.WindowIds.Contains(windowId))
+                {
+                    metadata.WindowIds.Add(windowId);
+                }
+
+                string json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
+                string filePath = Path.Combine(dataDirectory, "windows_metadata.json");
+                File.WriteAllText(filePath, json);
+
+                //通用配置文件中添加窗口的可见性设置
+                GeneralSettingsService.Instance.SetPartitionVisibility(windowId, true);
+
+                // 调试信息
+                Log.Information($"保存窗口元数据到: {filePath}");
+                Log.Information($"元数据内容: {json}");
+            }
+            catch (Exception ex)
+            {
+                Log.Information($"保存窗口元数据失败: {ex.Message}");
+            }
         }
 
 
@@ -177,7 +215,7 @@ namespace Layouter.Services
         /// <summary>
         /// 保存窗口ID映射
         /// </summary>
-        private void SaveWindowIdMapping()
+        public void SaveWindowIdMapping()
         {
             try
             {
@@ -213,6 +251,14 @@ namespace Layouter.Services
             catch (Exception ex)
             {
                 Log.Information($"保存窗口ID映射失败: {ex.Message}");
+            }
+        }
+
+        public void RemoveWindowMapping(DesktopManagerWindow window)
+        {
+            if (windowGuids.Remove(window))
+            {
+                SaveWindowIdMapping();
             }
         }
 
@@ -284,6 +330,14 @@ namespace Layouter.Services
                         continue;
                     }
 
+                    //检查窗口是否配置为不可见
+                    bool isVisible = GeneralSettingsService.Instance.GetPartitionVisibility(windowId);
+                    if (!isVisible)
+                    {
+                        Log.Information($"跳过不可见的窗口: {windowId}");
+                        continue;
+                    }
+
                     // 检查是否已存在使用此ID的窗口
                     bool idAlreadyUsed = windowGuids.Values.Contains(windowId);
                     if (idAlreadyUsed)
@@ -292,26 +346,8 @@ namespace Layouter.Services
                         continue;
                     }
 
-                    // 创建新窗口并分配唯一ID
-                    var window = new DesktopManagerWindow();
-                    windowGuids[window] = windowId; // 关联窗口和ID
-
-                    // 加载对应的分区数据
-                    string partitionPath = Path.Combine(dataDirectory, $"partition_{windowId}.json");
-                    if (File.Exists(partitionPath))
-                    {
-                        Log.Information($"为窗口 {window.GetHashCode()} 加载配置: {windowId}");
-                        LoadPartitionData(window, windowId);
-                        window.Sync(window);
-                        window.Show();
-                    }
-                    else
-                    {
-                        Log.Information($"未找到窗口 {windowId} 的配置，使用新ID");
-                        // 如果找不到配置，使用新GUID
-                        windowGuids[window] = Guid.NewGuid().ToString();
-                        window.Show();
-                    }
+                    // 创建并显示窗口
+                    ShowWindow(windowId);
                 }
             }
             catch (Exception ex)
@@ -325,6 +361,46 @@ namespace Layouter.Services
             }
         }
 
+        /// <summary>
+        /// 恢复窗口显示
+        /// </summary>
+        /// <param name="windowId"></param>
+        public void RestoreWindow(string windowId)
+        {
+            try
+            {
+                // 首先加载窗口ID映射
+                LoadWindowIdMapping();
+
+                var metadata = GetMetadata();
+
+                if (string.IsNullOrEmpty(windowId))
+                {
+                    return;
+                }
+
+                // 检查是否已存在使用此ID的窗口
+                bool idAlreadyUsed = windowGuids.Values.Contains(windowId);
+                if (idAlreadyUsed)
+                {
+                    Log.Information($"窗口已存在，跳过: {windowId}");
+                    return;
+                }
+                // 创建并显示窗口
+                ShowWindow(windowId);
+            }
+            catch (Exception ex)
+            {
+                Log.Information($"恢复窗口失败: {ex.Message}");
+
+                // 如果恢复失败，创建一个新窗口（确保使用新GUID）
+                var window = new DesktopManagerWindow();
+                windowGuids[window] = Guid.NewGuid().ToString();
+                window.Show();
+            }
+        }
+
+
         public void RemoveWindow(string windowId)
         {
             var metadata = GetMetadata();
@@ -333,13 +409,14 @@ namespace Layouter.Services
             string json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
             string filePath = Path.Combine(dataDirectory, "windows_metadata.json");
             File.WriteAllText(filePath, json);
+
+            //更新通用配置文件中窗口的可见性设置
+            GeneralSettingsService.Instance.RemovePartitionVisibility(windowId);
         }
 
         /// <summary>
         /// 加载分区数据
         /// </summary>
-        /// <param name="window"></param>
-        /// <param name="specificWindowId"></param>
         public void LoadPartitionData(DesktopManagerWindow window, string specificWindowId = null)
         {
             try
@@ -398,12 +475,10 @@ namespace Layouter.Services
                 {
                     Log.Information($"未找到配置文件: {filePath}");
 
-                    // 如果是没有指定ID的情况，不要尝试加载其他窗口的配置
                     if (specificWindowId == null)
                     {
                         Log.Information("使用新窗口默认设置");
-                        // 这是一个新窗口，确保它有一个唯一的GUID
-                        windowGuids[window] = Guid.NewGuid().ToString();
+                        windowGuids[window] = string.IsNullOrEmpty(windowId) ? Guid.NewGuid().ToString() : windowId;
                     }
                 }
             }
@@ -413,8 +488,19 @@ namespace Layouter.Services
             }
         }
 
+        public PartitionDataDto GetPartitionData(string windowId)
+        {
+            string filePath = Path.Combine(dataDirectory, $"partition_{windowId}.json");
 
-        private WindowsMetadataDto GetMetadata()
+            if (File.Exists(filePath))
+            {
+                string json = File.ReadAllText(filePath);
+                return JsonSerializer.Deserialize<PartitionDataDto>(json);
+            }
+            return null;
+        }
+
+        public WindowsMetadataDto GetMetadata()
         {
             string metadataPath = Path.Combine(dataDirectory, "windows_metadata.json");
             if (!File.Exists(metadataPath))
@@ -427,6 +513,61 @@ namespace Layouter.Services
             return metadata;
         }
 
+        /// <summary>
+        /// 显示窗口
+        /// (适合显示已保存的窗口)
+        /// </summary>
+        /// <param name="windowId"></param>
+        public void ShowWindow(string windowId)
+        {
+            // 创建新窗口并分配唯一ID
+            var window = new DesktopManagerWindow();
+            windowGuids[window] = windowId; // 关联窗口和ID
+
+            // 加载对应的分区数据
+            string partitionPath = Path.Combine(dataDirectory, $"partition_{windowId}.json");
+            if (File.Exists(partitionPath))
+            {
+                Log.Information($"为窗口 {window.GetHashCode()} 加载配置: {windowId}");
+                LoadPartitionData(window, windowId);
+                window.Sync(window);
+                window.Show();
+            }
+            else
+            {
+                Log.Information($"未找到窗口 {windowId} 的配置，使用新ID");
+                // 如果找不到配置，使用新GUID
+                windowGuids[window] = Guid.NewGuid().ToString();
+                window.Show();
+            }
+        }
+
+        /// <summary>
+        /// 显示窗口
+        /// （适合显示新创建的窗口）
+        /// </summary>
+        public void ShowWindow(DesktopManagerWindow window)
+        {
+            string windowId = window.WindowId ?? Guid.NewGuid().ToString();
+            windowGuids[window] = windowId;
+
+            // 加载对应的分区数据
+            string partitionPath = Path.Combine(dataDirectory, $"partition_{windowId}.json");
+            if (File.Exists(partitionPath))
+            {
+                Log.Information($"为窗口 {window.GetHashCode()} 加载配置: {windowId}");
+                LoadPartitionData(window, windowId);
+                window.Sync(window);
+                window.Show();
+            }
+            //新窗口
+            else
+            {
+                SaveMetadata(windowId);
+                window.Sync(window);
+                window.Show();
+            }
+        }
 
     }
     #region 数据传输对象

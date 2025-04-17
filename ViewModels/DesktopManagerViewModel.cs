@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -14,6 +15,9 @@ namespace Layouter.ViewModels
     {
         private ObservableCollection<DesktopIcon> icons = new ObservableCollection<DesktopIcon>();
         public ObservableCollection<DesktopIcon> Icons => icons;
+
+        //锁定状态变更事件
+        public event EventHandler<bool> LockStateChanged;
 
         private const double IconWidth = 64;
         private const double IconHeight = 64;
@@ -29,11 +33,14 @@ namespace Layouter.ViewModels
         private HorizontalAlignment titleAlignment = HorizontalAlignment.Left;
         private IconSize iconSize = IconSize.Medium;
         private double iconTextSize = 12.0;
+        private bool isLocked = false;
 
 
         public DesktopManagerViewModel()
         {
             ArrangeIconsCommand = new RelayCommand(ArrangeIcons);
+
+            ToggleLockCommand = new RelayCommand(SwitchLockState);
         }
 
         public string windowId { get; set; }
@@ -59,7 +66,7 @@ namespace Layouter.ViewModels
             set
             {
                 Color c = value.Color;
-                if (titleBackground != null)
+                if (value != null && c.A == 255)
                 {
                     byte baseAlpha = TitleBaseAlpha;
                     c.A = baseAlpha;
@@ -132,8 +139,24 @@ namespace Layouter.ViewModels
             }
         }
 
-        // 命令
+        public bool IsLocked
+        {
+            get => isLocked;
+            set
+            {
+                if (SetProperty(ref isLocked, value))
+                {
+                    // 更新窗口可拖动和可调整大小状态
+                    UpdateWindowDraggableState();
+                    // 触发锁定状态变更事件
+                    LockStateChanged?.Invoke(this, value);
+                }
+            }
+        }
+
         public IRelayCommand ArrangeIconsCommand { get; }
+
+        public ICommand ToggleLockCommand { get; }
 
 
         public void ArrangeIcons()
@@ -159,6 +182,16 @@ namespace Layouter.ViewModels
                 x += IconWidth + IconSpacing;
                 maxHeight = Math.Max(maxHeight, IconHeight);
             }
+        }
+
+        public void SwitchLockState()
+        {
+            IsLocked = !IsLocked;
+        }
+
+        private void UpdateWindowDraggableState()
+        {
+            //Todo: 更新窗口可拖动和可调整大小状态
         }
 
         private void UpdateIconSize()
@@ -220,6 +253,25 @@ namespace Layouter.ViewModels
                 }
             }
             return null;
+        }
+
+        public Size GetIconSize()
+        {
+            var size = new Size(48, 48);
+            switch (IconSize)
+            {
+                case IconSize.Small:
+                    size = new Size(32, 32);
+                    break;
+                case IconSize.Large:
+                    size = new Size(64, 64);
+                    break;
+                case IconSize.Medium:
+                default:
+                    size = new Size(48, 48);
+                    break;
+            }
+            return size;
         }
     }
 
