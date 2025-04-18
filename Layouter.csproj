@@ -8,6 +8,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyVersion>1.1.0.0</AssemblyVersion>
     <FileVersion>1.1.0.0</FileVersion>
+    <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -37,6 +38,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Resources\icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
     <PackageReference Include="Material.Icons.WPF" Version="2.3.0" />
@@ -57,12 +62,8 @@
       <HintPath>libs\FluentIcons.Wpf.dll</HintPath>
     </Reference>
     <Reference Include="Win32">
-      <HintPath>libs\Win32.dll</HintPath>
+      <HintPath>..\..\..\githubProjs\Layouter\libs\Win32.dll</HintPath>
     </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Resources\" />
   </ItemGroup>
 
 </Project>

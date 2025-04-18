@@ -9,6 +9,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using FluentIcons.Wpf;
 using Hardcodet.Wpf.TaskbarNotification;
+using Layouter.Views;
+using System.Reflection;
+using System.Diagnostics;
 
 namespace Layouter.Services
 {
@@ -54,8 +57,8 @@ namespace Layouter.Services
             // 创建基本菜单项
             CreateBasicMenuItems();
 
-            // 创建设置和退出菜单项
-            CreateExitMenuItems();
+            // 创建关于和退出菜单项
+            CreateAboutAndExitMenuItems();
         }
 
         /// <summary>
@@ -82,7 +85,7 @@ namespace Layouter.Services
 
             // 自启动状态切换菜单项
             bool isAutoStartEnabled = GeneralSettingsService.Instance.GetAutoStartEnabled();
-            var autoStartIcon = isAutoStartEnabled ?IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.Bookmark, Colors.DodgerBlue) : IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.BookmarkOff, Colors.DodgerBlue);
+            var autoStartIcon = isAutoStartEnabled ? IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.Bookmark, Colors.DodgerBlue) : IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.BookmarkOff, Colors.DodgerBlue);
             var autoStartToggleItem = CreateMenuItem(isAutoStartEnabled ? "开启" : "停止", autoStartIcon);
             autoStartToggleItem.Click += (s, e) => ToggleAutoStart(autoStartToggleItem);
             autoStartMenuItem.Items.Add(autoStartToggleItem);
@@ -123,14 +126,31 @@ namespace Layouter.Services
         /// <summary>
         /// 创建退出菜单项
         /// </summary>
-        private void CreateExitMenuItems()
+        private void CreateAboutAndExitMenuItems()
         {
+            // 关于菜单项
+            var aboutMenuItem = CreateMenuItem("关于", IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.ErrorCircle, Colors.DodgerBlue));
+            trayMenu.Items.Add(aboutMenuItem);
+            menuItems["About"] = aboutMenuItem;
+
+            var versionMenuItem = CreateMenuItem($"版本({Assembly.GetExecutingAssembly().GetName().Version})");
+            aboutMenuItem.Items.Add(versionMenuItem);
+
+            var contactMenuItem = CreateMenuItem($"欢迎建议 (@VrezenStrijder)", IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.ContactCardLink, Colors.DodgerBlue));
+            contactMenuItem.Click += (s, e) =>
+            {
+                Process.Start(new ProcessStartInfo("https://github.com/VrezenStrijder/Layouter")
+                {
+                    UseShellExecute = true
+                });
+            };
+            aboutMenuItem.Items.Add(contactMenuItem);
+
             // 退出菜单项
             var exitItem = CreateMenuItem("退出", IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.ArrowExit, Colors.DodgerBlue));
             exitItem.Click += (s, e) => viewModel.ExitCommand.Execute(null);
             trayMenu.Items.Add(exitItem);
         }
-
 
         /// <summary>
         /// 获取托盘菜单
@@ -180,8 +200,6 @@ namespace Layouter.Services
                     Log.Information($"加载菜单[{header}]的图标时出错: {ex.Message}");
                 }
             }
-
-
             return menuItem;
         }
 

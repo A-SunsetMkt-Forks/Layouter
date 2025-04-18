@@ -16,3 +16,25 @@
 - **Simple and quiet**: Simple、quiet and non-intrusive, use it with confidence
 
 ## Shortcuts
+
+- Desktop window
+![screenshot](./images/01.png)
+
+- Manage window
+![screenshot](./images/02.png)
+
+- Tray Menu  
+![screenshot](./images/03.png)
+
+## What is being planned for next version
+
+- Support for plugins
+- Support config backup
+
+## Feedback
+
+Issues and suggestions are welcome.
+
+## License
+
+[Apache-2.0 license](LICENSE)

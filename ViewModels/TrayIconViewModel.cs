@@ -78,8 +78,13 @@ namespace Layouter.ViewModels
 
         private void SettingWindow()
         {
-            var settingsWindow = new PartitionManagerWindow();
-            settingsWindow.ShowDialog();
+            var createFunc = () =>
+            {
+                return new PartitionManagerWindow();
+            };
+
+            //创建单例窗口
+            SingletonWindowManager.Instance.ShowWindow<PartitionManagerWindow>(createFunc, true);
         }
 
         private void Exit()
