@@ -17,13 +17,13 @@
 
 ## 截图
 
-- 桌面窗口
+- 桌面窗口  
 ![screenshot](./images/01.png)
 
-- 管理窗口
+- 管理窗口  
 ![screenshot](./images/02.png)
 
-- 托盘图标  
+- 托盘图标    
 ![screenshot](./images/03.png)
 
 ## 新版本计划

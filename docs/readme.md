@@ -17,10 +17,10 @@
 
 ## Shortcuts
 
-- Desktop window
+- Desktop window  
 ![screenshot](./images/01.png)
 
-- Manage window
+- Manage window  
 ![screenshot](./images/02.png)
 
 - Tray Menu  
