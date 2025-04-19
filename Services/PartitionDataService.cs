@@ -14,7 +14,6 @@ namespace Layouter.Services
     public class PartitionDataService
     {
         private static readonly Lazy<PartitionDataService> instance = new Lazy<PartitionDataService>(() => new PartitionDataService());
-
         public static PartitionDataService Instance => instance.Value;
 
         private string dataDirectory;

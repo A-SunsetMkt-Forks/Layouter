@@ -68,26 +68,6 @@ namespace Layouter.Views
             }
         }
 
-        //private void SelectAll_Click(object sender, RoutedEventArgs e)
-        //{
-        //    vm.SelectAll();
-        //}
-
-        //private void DeselectAll_Click(object sender, RoutedEventArgs e)
-        //{
-        //    vm.DeselectAll();
-        //}
-
-        //private void ShowSelected_Click(object sender, RoutedEventArgs e)
-        //{
-        //    vm.ShowSelected();
-        //}
-
-        //private void HideSelected_Click(object sender, RoutedEventArgs e)
-        //{
-        //    vm.HideSelected();
-        //}
-
         private void ToggleSelectAll_Click(object sender, RoutedEventArgs e)
         {
             vm.ToggleSelectAll();

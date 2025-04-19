@@ -16,6 +16,11 @@ namespace Layouter.Models
         private double padding = 10;
         private ObservableCollection<DesktopIcon> icons = new ObservableCollection<DesktopIcon>();
 
+        public IconPartition()
+        {
+            Icons.CollectionChanged += Icons_CollectionChanged;
+        }
+
         public string Id { get; } = Guid.NewGuid().ToString();
 
         public string Name
@@ -64,11 +69,6 @@ namespace Layouter.Models
         {
             get => padding;
             set => SetProperty(ref padding, value);
-        }
-
-        public IconPartition()
-        {
-            Icons.CollectionChanged += Icons_CollectionChanged;
         }
 
         private void Icons_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)

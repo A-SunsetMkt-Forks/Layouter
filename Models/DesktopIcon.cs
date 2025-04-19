@@ -15,6 +15,13 @@ namespace Layouter.Models
         private IconType iconType = IconType.Normal;
         private double textSize = 12d;
 
+        public DesktopIcon()
+        {
+            // 生成唯一ID
+            Id = Guid.NewGuid().ToString();
+            Size = new Size(48, 48); // 默认大小
+        }
+
         public string Id 
         { 
             get => id; 
@@ -63,12 +70,6 @@ namespace Layouter.Models
             set => SetProperty(ref textSize, value);
         }
 
-        public DesktopIcon()
-        {
-            // 生成唯一ID
-            Id = Guid.NewGuid().ToString();
-            Size = new Size(48, 48); // 默认大小
-        }
 
         public DesktopIcon Clone()
         {

@@ -9,6 +9,7 @@ using System.Windows;
 
 namespace Layouter.Utility
 {
+
     public class EqualityToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

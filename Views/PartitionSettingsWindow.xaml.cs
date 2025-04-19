@@ -134,16 +134,6 @@ namespace Layouter.Views
                 TitleBackgroundPreview.Fill = new SolidColorBrush(c);
             }
 
-
-            //var colorDialog = new ColorDialog();
-            //var currentColor = ((SolidColorBrush)TitleBackgroundPreview.Fill).Color;
-            //colorDialog.Color = System.Drawing.Color.FromArgb(currentColor.A, currentColor.R, currentColor.G, currentColor.B);
-
-            //if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            //{
-            //    var newColor = Color.FromArgb(colorDialog.Color.A, colorDialog.Color.R, colorDialog.Color.G, colorDialog.Color.B);
-            //    TitleBackgroundPreview.Fill = new SolidColorBrush(newColor);
-            //}
         }
 
 
@@ -235,23 +225,7 @@ namespace Layouter.Views
             foreach (var icon in vm.Icons)
             {
                 icon.TextSize = vm.IconTextSize;
-            }
-
-            //Todo：检查后删除
-            // 如果是全局设置且选择了应用到所有窗口
-            //if (isGlobalSettings)
-            //{
-            //    bool enableGlobalStyle = ApplyToAllCheckBox.IsChecked ?? true;
-
-            //    PartitionSettingsService.Instance.SaveGlobalSettings(vm);
-
-            //    // 如果启用全局样式，应用到所有窗口
-            //    if (enableGlobalStyle)
-            //    {
-            //        WindowManagerService.Instance.ApplyGlobalSettingsToAllWindows();
-            //    }
-            //}
-            //else 
+            } 
             
             if (!string.IsNullOrEmpty(vm.windowId))
             {
