@@ -68,7 +68,8 @@
             </Setter.Value>
         </Setter>
     </Style>
-    
+
     <!-- 托盘图标 -->
     <tb:TaskbarIcon x:Key="TrayIcon" ToolTipText="桌面助手(Layouter)" DoubleClickCommand="{Binding NewWindowCommand}"/>
 </ResourceDictionary>
+    
