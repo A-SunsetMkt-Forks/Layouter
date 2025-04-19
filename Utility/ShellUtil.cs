@@ -226,9 +226,9 @@ namespace Layouter.Utility
                 if (pidl != IntPtr.Zero)
                 {
                     SHFILEINFO shfi = new SHFILEINFO();
-                    IntPtr result = SHGetFileInfo(pidl, 0, ref shfi, (uint)Marshal.SizeOf(shfi), flags);
+                    var result = SHGetFileInfo(pidl, 0, ref shfi, (uint)Marshal.SizeOf(shfi), flags);
 
-                    if (result != IntPtr.Zero && shfi.hIcon != IntPtr.Zero)
+                    if ((new IntPtr(result) != IntPtr.Zero) && shfi.hIcon != IntPtr.Zero)
                     {
                         iconSource = Imaging.CreateBitmapSourceFromHIcon(shfi.hIcon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
 
