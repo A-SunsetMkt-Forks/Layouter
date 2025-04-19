@@ -1,69 +1,77 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
-    <AssemblyVersion>1.1.0.0</AssemblyVersion>
-    <FileVersion>1.1.0.0</FileVersion>
-    <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows7.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UseWPF>true</UseWPF>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<FileVersion>1.0.0.0</FileVersion>
+		<ApplicationIcon>Resources\icon.ico</ApplicationIcon>
 
-  <ItemGroup>
-    <Compile Remove="Resources\Images\**" />
-    <EmbeddedResource Remove="Resources\Images\**" />
-    <None Remove="Resources\Images\**" />
-    <Page Remove="Resources\Images\**" />
-  </ItemGroup>
+		<Product>桌面助手(Layouter)</Product>
+		<Authors>@VrezenStrijder</Authors>
+		<Copyright>Copyright © 2025 @VrezenStrijder. All rights reserved.</Copyright>
+		<AssemblyTitle>Layouter</AssemblyTitle>
+		<Version>1.0.0</Version>
 
-  <ItemGroup>
-    <Compile Remove="MainWindow.xaml.cs" />
-    <Compile Remove="Models\Configuration.cs" />
-    <Compile Remove="Services\ConfigurationService.cs" />
-    <Compile Remove="Services\DataService.cs" />
-    <Compile Remove="Utility\Win32Util.cs" />
-    <Compile Remove="ViewModels\AddPartitionViewModel.cs" />
-    <Compile Remove="ViewModels\Feature1ViewModel.cs" />
-    <Compile Remove="Views\DesktopManagerView.xaml.cs" />
-    <Compile Remove="Views\Feature1Window.xaml.cs" />
-  </ItemGroup>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Page Remove="MainWindow.xaml" />
-    <Page Remove="Views\AddPartitionWindow.xaml" />
-    <Page Remove="Views\DesktopManagerView.xaml" />
-    <Page Remove="Views\Feature1Window.xaml" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="Resources\Images\**" />
+		<EmbeddedResource Remove="Resources\Images\**" />
+		<None Remove="Resources\Images\**" />
+		<Page Remove="Resources\Images\**" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Content Include="Resources\icon.ico" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="MainWindow.xaml.cs" />
+		<Compile Remove="Models\Configuration.cs" />
+		<Compile Remove="Services\ConfigurationService.cs" />
+		<Compile Remove="Services\DataService.cs" />
+		<Compile Remove="Services\IDataService.cs" />
+		<Compile Remove="Utility\Win32Util.cs" />
+		<Compile Remove="ViewModels\AddPartitionViewModel.cs" />
+		<Compile Remove="ViewModels\Feature1ViewModel.cs" />
+		<Compile Remove="Views\DesktopManagerView.xaml.cs" />
+		<Compile Remove="Views\Feature1Window.xaml.cs" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
-    <PackageReference Include="Material.Icons.WPF" Version="2.3.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Serilog" Version="4.2.0" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
-    <PackageReference Include="System.Management" Version="9.0.4" />
-  </ItemGroup>
+	<ItemGroup>
+		<Page Remove="MainWindow.xaml" />
+		<Page Remove="Views\AddPartitionWindow.xaml" />
+		<Page Remove="Views\DesktopManagerView.xaml" />
+		<Page Remove="Views\Feature1Window.xaml" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="FluentIcons.Common">
-      <HintPath>libs\FluentIcons.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="FluentIcons.Wpf">
-      <HintPath>libs\FluentIcons.Wpf.dll</HintPath>
-    </Reference>
-    <Reference Include="Win32">
-      <HintPath>..\..\..\githubProjs\Layouter\libs\Win32.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+	<ItemGroup>
+		<Content Include="Resources\icon.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+		<PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
+		<PackageReference Include="Material.Icons.WPF" Version="2.3.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Serilog" Version="4.2.0" />
+		<PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+		<PackageReference Include="System.Management" Version="9.0.4" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="FluentIcons.Common">
+			<HintPath>libs\FluentIcons.Common.dll</HintPath>
+		</Reference>
+		<Reference Include="FluentIcons.Wpf">
+			<HintPath>libs\FluentIcons.Wpf.dll</HintPath>
+		</Reference>
+		<Reference Include="Win32">
+			<HintPath>..\..\..\githubProjs\Layouter\libs\Win32.dll</HintPath>
+		</Reference>
+	</ItemGroup>
 
 </Project>

@@ -8,7 +8,6 @@ using Layouter.Models;
 using Layouter.Utility;
 using Layouter.ViewModels;
 using Layouter.Views;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Layouter.Services
 {

@@ -6,14 +6,14 @@ using Layouter.Models;
 using Layouter.ViewModels;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Layouter.Services
 {
     public class PartitionSettingsService
     {
-        private static PartitionSettingsService instance;
-        public static PartitionSettingsService Instance => instance ?? (instance = new PartitionSettingsService());
+        private static readonly Lazy<PartitionSettingsService> instance = new Lazy<PartitionSettingsService>(() => new PartitionSettingsService());
+
+        public static PartitionSettingsService Instance => instance.Value;
 
         private string styleFilePath;
         private string globalStyleFilePath;

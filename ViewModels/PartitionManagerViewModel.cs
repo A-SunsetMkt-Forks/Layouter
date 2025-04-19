@@ -18,8 +18,8 @@ namespace Layouter.ViewModels
         private ObservableCollection<PartitionItemViewModel> partitions = new ObservableCollection<PartitionItemViewModel>();
         private PartitionItemViewModel selectedPartition;
         private bool enableGlobalStyle;
-        private bool _allSelected;
-        private bool _anySelectedVisible;
+        private bool allSelected;
+        private bool anySelectedVisible;
 
         /// <summary>
         /// 分区列表
@@ -63,8 +63,8 @@ namespace Layouter.ViewModels
         /// </summary>
         public bool AllSelected
         {
-            get => _allSelected;
-            set => SetProperty(ref _allSelected, value);
+            get => allSelected;
+            set => SetProperty(ref allSelected, value);
         }
 
         /// <summary>
@@ -72,8 +72,8 @@ namespace Layouter.ViewModels
         /// </summary>
         public bool AnySelectedVisible
         {
-            get => _anySelectedVisible;
-            set => SetProperty(ref _anySelectedVisible, value);
+            get => anySelectedVisible;
+            set => SetProperty(ref anySelectedVisible, value);
         }
 
         public PartitionManagerViewModel()

@@ -23,7 +23,7 @@
 - 管理窗口  
 ![screenshot](./images/02.png)
 
-- 托盘图标    
+- 托盘图标  
 ![screenshot](./images/03.png)
 
 ## 新版本计划
@@ -37,4 +37,4 @@
 
 ## 协议
 
-[Apache-2.0 license](LICENSE)
+[Apache-2.0 license](../LICENSE)
