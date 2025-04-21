@@ -24,6 +24,9 @@ namespace Layouter.Views
         private Point? dragStartPoint = null;
         private bool isDragging = false;
         private DesktopIcon draggedIcon = null;
+        private bool isMouseOver = false;
+        private double originalOpacity = 1.0; //窗口默认透明度
+
 
         private DateTime lastClickTime = DateTime.MinValue;
         private DesktopIcon lastClickedIcon = null;
@@ -182,6 +185,41 @@ namespace Layouter.Views
             catch (Exception ex)
             {
                 Log.Information($"加载分区数据时出错: {ex.Message}");
+            }
+        }
+
+        #endregion
+
+        #region 窗口事件
+        private void Window_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            isMouseOver = true;
+            UpdateWindowOpacity();
+        }
+
+        /// <summary>
+        /// 鼠标离开窗口事件
+        /// </summary>
+        private void Window_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            isMouseOver = false;
+            UpdateWindowOpacity();
+        }
+
+        private void UpdateWindowOpacity()
+        {
+            if (vm != null)
+            {
+                originalOpacity = vm.Opacity;
+
+                if (isMouseOver)
+                {
+                    this.Opacity = 1.0;
+                }
+                else
+                {
+                    this.Opacity = originalOpacity * 0.8;
+                }
             }
         }
 
@@ -569,6 +607,9 @@ namespace Layouter.Views
                 double x = dropPoint.X;
                 double y = dropPoint.Y;
 
+                var viewModel = DataContext as DesktopManagerViewModel;
+                var iconSize = viewModel?.GetIconSize() ?? new Size(48, 48);
+
                 // 判断是否是从另一个分区拖过来的图标(true:是,false:不是)
                 bool flag = data.GetDataPresent("DraggedIconSource") && (data.GetData("DraggedIconSource").ToString() == "Partition");
 
@@ -582,39 +623,47 @@ namespace Layouter.Views
                         string filePath = files[0]; // 取第一个文件
 
                         // 检查是否已经在这个分区中 - 如果已存在则静默返回，不提示
-                        var viewModel = DataContext as DesktopManagerViewModel;
                         if (viewModel.Icons.Any(i => i.IconPath.Equals(filePath, StringComparison.OrdinalIgnoreCase)))
                         {
                             return;
                         }
 
-                        var iconSize = viewModel.GetIconSize();
+                        newIcon = new DesktopIcon
+                        {
+                            Id = Guid.NewGuid().ToString(),
+                            Position = new Point(x, y),
+                            Size = iconSize,
+                            TextSize = viewModel.IconTextSize,
+                            IconPath = DesktopIconService.Instance.CombineHiddenPathWithIconPath(filePath)
+                        };
 
                         // 创建新的图标对象
-                        if (ShortCutUtil.IsShortcutPath(filePath))
+                        if (filePath.Equals(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)))
                         {
-                            newIcon = new DesktopIcon
-                            {
-                                Id = Guid.NewGuid().ToString(),
-                                Name = Path.GetFileNameWithoutExtension(filePath),
-                                IconPath = DesktopIconService.Instance.CombineHiddenPathWithIconPath(filePath),
-                                Position = new Point(x, y),
-                                Size = iconSize,
-                                TextSize = viewModel.IconTextSize
-                            };
+                            string userProfile = ShellUtil.GetDisplayCurrentUserName();
+                            newIcon.Name = userProfile;
+                            newIcon.IconPath = ShellUtil.MapSpecialFolderByName(userProfile);
+                            newIcon.IconType = IconType.Shell;
+                        }
+                        else if (ShortCutUtil.IsShortcutPath(filePath))
+                        {
+                            newIcon.Name = Path.GetFileNameWithoutExtension(filePath);
+                            newIcon.IconType = IconType.Shortcut;
+                        }
+                        else if (Directory.Exists(filePath))
+                        {
+                            newIcon.Name = new DirectoryInfo(filePath).Name;
+                            newIcon.IconType = IconType.Folder;
+                        }
+                        else if (File.Exists(filePath))
+                        {
+                            newIcon.Name = new FileInfo(filePath).Name;
+                            newIcon.IconType = IconType.File;
                         }
                         else
                         {
-                            newIcon = new DesktopIcon
-                            {
-                                Id = Guid.NewGuid().ToString(),
-                                Name = ShellUtil.GetSpecialFolderDisplayName(filePath),
-                                IconPath = filePath,
-                                Position = new Point(x, y),
-                                Size = iconSize,
-                                TextSize = viewModel.IconTextSize,
-                                IconType = IconType.Shell
-                            };
+                            newIcon.Name = ShellUtil.GetSpecialFolderDisplayName(filePath);
+                            newIcon.IconType = IconType.Shell;
                         }
 
                         if (flag)
@@ -634,7 +683,7 @@ namespace Layouter.Views
 
                         if (shellItems != null && shellItems.Count > 0)
                         {
-                            newIcon = CreateIconFromShellItem(shellItems[0], dropPoint);
+                            newIcon = CreateIconFromShellItem(shellItems[0], dropPoint, iconSize);
                         }
                     }
                 }
@@ -642,14 +691,13 @@ namespace Layouter.Views
                 // 如果成功创建了新图标，添加到当前分区
                 if (newIcon != null)
                 {
-                    var viewModel = DataContext as DesktopManagerViewModel;
                     viewModel?.AddIcon(newIcon);
 
                     // 保存分区数据
                     SavePartitionData();
 
                     // 如果是从桌面拖过来的文件，则隐藏桌面上的原图标
-                    if (!flag && data.GetDataPresent(DataFormats.FileDrop))
+                    if (!flag && data.GetDataPresent(DataFormats.FileDrop) && (newIcon.IconType != IconType.Shell))
                     {
                         var files = data.GetData(DataFormats.FileDrop) as string[];
                         if (files != null && files.Length > 0)
@@ -671,6 +719,13 @@ namespace Layouter.Views
                             }
                         }
                     }
+                    else if (newIcon.IconType == IconType.Shell)
+                    {
+
+                        var filePath = DesktopIconService.Instance.RemoveHiddenPathInIconPath(newIcon.IconPath);
+                        // 隐藏桌面上的原图标
+                        bool hidden = DesktopIconService.Instance.HideDesktopIcon(filePath);
+                    }
 
                     // 延迟执行排列，确保新图标已经加入集合
                     Application.Current.Dispatcher.BeginInvoke(new Action(() =>
@@ -687,7 +742,7 @@ namespace Layouter.Views
             }
         }
 
-        private DesktopIcon CreateIconFromShellItem(ShellItemInfo item, Point point)
+        private DesktopIcon CreateIconFromShellItem(ShellItemInfo item, Point point, Size iconSize)
         {
             var viewModel = DataContext as DesktopManagerViewModel;
             if (viewModel.Icons.Any(i => i.IconPath.Equals(item.Path, StringComparison.OrdinalIgnoreCase)))
@@ -702,7 +757,7 @@ namespace Layouter.Views
                 Name = item.DisplayName,
                 IconPath = item.Path,
                 Position = point,
-                Size = new Size(64, 64),
+                Size = iconSize,
                 IconType = IconType.Shell
             };
 

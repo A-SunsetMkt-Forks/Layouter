@@ -200,6 +200,8 @@ namespace Layouter.Services
                     Log.Information($"加载菜单[{header}]的图标时出错: {ex.Message}");
                 }
             }
+
+
             return menuItem;
         }
 

@@ -19,6 +19,8 @@
         Opacity="{Binding Opacity}"
         AllowDrop="True"
         ResizeMode="CanResizeWithGrip"
+        MouseEnter="Window_MouseEnter"
+        MouseLeave="Window_MouseLeave"
         ShowInTaskbar="False">
 
     <Window.Resources>

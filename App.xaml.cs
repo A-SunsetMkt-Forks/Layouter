@@ -56,14 +56,11 @@ namespace Layouter
             services.AddSingleton<TrayMenuService>();
             services.AddSingleton<GeneralSettingsService>();
             services.AddSingleton<DesktopIconService>();
-            services.AddSingleton<PartitionSettingsService>();
             services.AddSingleton<PartitionDataService>();
             services.AddSingleton<WindowManagerService>();
 
             services.AddSingleton<TrayIconViewModel>();
             services.AddSingleton<DesktopManagerViewModel>();
-            services.AddSingleton<PartitionManagerViewModel>();
-            services.AddSingleton<PartitionItemViewModel>();
         }
 
         protected override void OnExit(ExitEventArgs e)

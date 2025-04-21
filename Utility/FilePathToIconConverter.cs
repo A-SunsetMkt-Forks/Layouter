@@ -42,7 +42,7 @@ namespace Layouter.Utility
                     }
                 }
 
-                var source = ShortCutUtil.GetIconFromShortcut(filePath);
+                var source = ShortCutUtil.GetSuitableIcon(filePath);
 
                 return source;
             }

@@ -1,8 +1,6 @@
 ﻿global using CommunityToolkit;
 global using CommunityToolkit.Mvvm;
-global using CommunityToolkit.Mvvm.ComponentModel;
 global using CommunityToolkit.Mvvm.DependencyInjection;
-
 global using Serilog;
 
 global using System;

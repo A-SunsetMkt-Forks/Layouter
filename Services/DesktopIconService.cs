@@ -61,7 +61,7 @@ namespace Layouter.Services
             try
             {
                 // 获取桌面窗口和视图
-                IntPtr hDesktop = Win32.FindWindow("Progman", "Program Manager"); 
+                IntPtr hDesktop = Win32.FindWindow("Progman", "Program Manager");
                 IntPtr hWorkerW = IntPtr.Zero;
                 IntPtr hDefView = Win32.FindWindowEx(hDesktop, IntPtr.Zero, "SHELLDLL_DefView", null);
 
@@ -339,10 +339,25 @@ namespace Layouter.Services
         {
             try
             {
-                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                if (string.IsNullOrEmpty(filePath))
+                {
+                    return false;
+                }
+
+                bool isFile = File.Exists(filePath);
+                bool isFolder = Directory.Exists(filePath);
+                var shellIcon = ShellUtil.GetSystemIconType(filePath);
+
+                if (!isFile && !isFolder && !shellIcon.HasValue)
                 {
                     Log.Information($"无法隐藏不存在的文件: {filePath}");
                     return false;
+                }
+
+                if (shellIcon.HasValue)
+                {
+                    ShellUtil.SetShellIconVisibility(filePath, false);
+                    return true;
                 }
 
                 // 创建特殊的隐藏文件夹来存储隐藏的图标
@@ -360,7 +375,7 @@ namespace Layouter.Services
                 }
 
                 // 获取文件名和扩展名
-                string fileName = Path.GetFileName(filePath);
+                string fileName = isFile ? Path.GetFileName(filePath) : new DirectoryInfo(filePath).Name;
 
                 // 目标路径（隐藏文件夹中的文件路径）
                 string targetPath = Path.Combine(hiddenFolderPath, fileName);
@@ -368,20 +383,27 @@ namespace Layouter.Services
                 // 创建记录文件位置的元数据文件，用于稍后恢复
                 string metadataPath = Path.Combine(hiddenFolderPath, $"{fileName}.meta");
 
-                // 如果目标文件已存在，先尝试删除
-                if (File.Exists(targetPath))
+                //删除目标位置的同名文件(如果存在)
+                if (isFile && File.Exists(targetPath))
                 {
                     File.Delete(targetPath);
                 }
+                else if (isFolder && Directory.Exists(targetPath))
+                {
+                    Directory.Delete(targetPath, true);
+                }
 
-                // 复制文件到隐藏文件夹
-                File.Copy(filePath, targetPath);
+                if (isFile)
+                {
+                    File.Move(filePath, targetPath);
+                }
+                else if (isFolder)
+                {
+                    Directory.Move(filePath, targetPath);
+                }
 
                 // 记录原始文件路径到元数据文件
                 File.WriteAllText(metadataPath, filePath);
-
-                // 删除原始文件
-                File.Delete(filePath);
 
                 Log.Information($"成功隐藏桌面图标: {filePath}");
                 return true;
@@ -409,6 +431,14 @@ namespace Layouter.Services
                     return false;
                 }
 
+                var systemIcon = ShellUtil.GetSystemIconType(filePath);
+                //系统图标
+                if (systemIcon.HasValue)
+                {
+                    ShellUtil.SetShellIconVisibility(filePath, true);
+                    return true;
+                }
+
                 // 获取文件名
                 string fileName = Path.GetFileName(filePath);
 
@@ -430,12 +460,17 @@ namespace Layouter.Services
                 // 检查文件是否存在于隐藏文件夹中
                 if (!File.Exists(hiddenFilePath))
                 {
+                    //检查元数据文件
+                    if (File.Exists(metadataPath))
+                    {
+                        File.Delete(metadataPath);
+                    }
                     Log.Information($"隐藏文件夹中不存在此文件: {fileName}");
                     return false;
                 }
 
                 // 检查原始路径是否存在于元数据文件中
-                string originalPath = filePath;
+                string originalPath = RemoveHiddenPathInIconPath(filePath);
                 if (File.Exists(metadataPath))
                 {
                     // 从元数据读取原始路径
@@ -449,14 +484,17 @@ namespace Layouter.Services
                     return false;
                 }
 
-                // 复制文件回原位置
-                File.Copy(hiddenFilePath, originalPath);
+                bool isFile = File.Exists(hiddenFilePath);
+                bool isFolder = Directory.Exists(hiddenFilePath);
 
-                // 删除隐藏文件和元数据
-                File.Delete(hiddenFilePath);
-                if (File.Exists(metadataPath))
+                // 移动文件到原位置
+                if (isFile)
                 {
-                    File.Delete(metadataPath);
+                    File.Move(hiddenFilePath, originalPath);
+                }
+                else if (isFolder)
+                {
+                    Directory.Move(hiddenFilePath, originalPath);
                 }
 
                 // 清理空的隐藏文件夹

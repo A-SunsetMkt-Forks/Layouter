@@ -12,6 +12,9 @@ using static System.Windows.Win32;
 using System.Diagnostics;
 using FluentIcons.Common.Internals;
 using System.Security.Principal;
+using Newtonsoft.Json.Linq;
+using System.Runtime.ConstrainedExecution;
+using Microsoft.Win32;
 
 namespace Layouter.Utility
 {
@@ -21,6 +24,18 @@ namespace Layouter.Utility
         public string Path { get; set; }
         public string DisplayName { get; set; }
         public ImageSource IconSource { get; set; }
+    }
+
+    /// <summary>
+    /// 系统桌面图标
+    /// </summary>
+    public enum SystemIconType
+    {
+        Computer,       // 此电脑
+        RecycleBin,     // 回收站
+        UserFiles,      // 用户文件
+        ControlPanel,   // 控制面板
+        Network         // 网络
     }
 
     public class ShellUtil
@@ -41,6 +56,7 @@ namespace Layouter.Utility
             { "网络", "::{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}" },
             { "桌面", "::{B4BFCC3A-DB2C-424C-B29F-7FE9909CFC64}" },
             { "所有控制面板项", "::{21EC2020-3AEA-1069-A2DD-08002B30309D}" },
+            { GetDisplayCurrentUserName(), "::{59031A47-3F72-44A7-89C5-5595FE6B30EE}" },
             { "文档", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) },
             { "我的文档", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) },
             { "图片", Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) },
@@ -57,7 +73,7 @@ namespace Layouter.Utility
             { "应用数据", Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) },
             { "本地应用数据", Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) },
             { "临时文件", Path.GetTempPath() },
-            { GetDisplayCurrentUserName(),Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) }
+            //{ GetDisplayCurrentUserName(),Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) }
         };
 
         public static System.Runtime.InteropServices.ComTypes.IDataObject GetComDataObject(System.Windows.IDataObject wpfDataObject)
@@ -483,6 +499,86 @@ namespace Layouter.Utility
             catch
             {
                 return false;
+            }
+        }
+
+        #endregion
+
+        #region 系统桌面图标
+
+        public static SystemIconType? GetSystemIconType(string iconKey)
+        {
+            string key = iconKey.Replace("::", "");
+            var iconMap = new Dictionary<string, SystemIconType>()
+            {
+                {"{20D04FE0-3AEA-1069-A2D8-08002B30309D}", SystemIconType.Computer} ,
+                { "{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}", SystemIconType.Network},
+                { "{645FF040-5081-101B-9F08-00AA002F954E}", SystemIconType.RecycleBin},
+                { "{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}", SystemIconType.ControlPanel},
+                { "{59031A47-3F72-44A7-89C5-5595FE6B30EE}", SystemIconType.UserFiles},
+                {Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),SystemIconType.UserFiles },
+            };
+
+            if (iconMap.ContainsKey(key))
+            {
+                return iconMap[key];
+            }
+            return null;
+        }
+
+        public static async Task<bool> SetShellIconVisibility(string iconKey, bool visible)
+        {
+            if (string.IsNullOrEmpty(iconKey))
+            {
+                return false;
+            }
+
+            try
+            {
+                string registryPath = @"Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel";
+
+                using (var key = Registry.CurrentUser.OpenSubKey(registryPath, true) ?? Registry.CurrentUser.CreateSubKey(registryPath))
+                {
+                    if (key != null)
+                    {
+                        if (iconKey.Equals(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)))
+                        {
+                            iconKey = "{59031A47-3F72-44A7-89C5-5595FE6B30EE}";
+                        }
+                        else
+                        {
+                            iconKey = iconKey.Replace("::", "");
+                        }
+
+                        // 值为0表示显示，值为1表示隐藏
+                        key.SetValue(iconKey, visible ? 0 : 1, RegistryValueKind.DWord);
+
+                        await Task.Delay(400);
+                        RefreshDesktop();
+
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"设置Shell图标可见性时出错: {ex.Message}");
+                return false;
+            }
+        }
+
+        public static void RefreshDesktop()
+        {
+            try
+            {
+                // 发送刷新桌面的消息
+                SHChangeNotify(0x8000000, 0x1000, IntPtr.Zero, IntPtr.Zero);
+            }
+            catch (Exception ex)
+            {
+                Log.Information($"刷新桌面失败: {ex.Message}");
             }
         }
 

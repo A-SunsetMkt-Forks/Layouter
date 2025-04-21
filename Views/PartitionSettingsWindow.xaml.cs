@@ -225,7 +225,7 @@ namespace Layouter.Views
             foreach (var icon in vm.Icons)
             {
                 icon.TextSize = vm.IconTextSize;
-            } 
+            }
             
             if (!string.IsNullOrEmpty(vm.windowId))
             {

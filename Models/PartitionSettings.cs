@@ -29,13 +29,13 @@ namespace Layouter.Models
 
     public class PartitionVisibilityChangedEventArgs : EventArgs
     {
+        public string PartitionId { get; }
+        public bool IsVisible { get; }
+
         public PartitionVisibilityChangedEventArgs(string partitionId, bool isVisible)
         {
             PartitionId = partitionId;
             IsVisible = isVisible;
         }
-
-        public string PartitionId { get; }
-        public bool IsVisible { get; }
     }
 }

@@ -12,15 +12,8 @@ namespace Layouter.Models
         private Point position;
         private Size size = new Size(48, 48);
         private bool isDragging;
-        private IconType iconType = IconType.Normal;
+        private IconType iconType = IconType.Shortcut;
         private double textSize = 12d;
-
-        public DesktopIcon()
-        {
-            // 生成唯一ID
-            Id = Guid.NewGuid().ToString();
-            Size = new Size(48, 48); // 默认大小
-        }
 
         public string Id 
         { 
@@ -70,6 +63,12 @@ namespace Layouter.Models
             set => SetProperty(ref textSize, value);
         }
 
+        public DesktopIcon()
+        {
+            // 生成唯一ID
+            Id = Guid.NewGuid().ToString();
+            Size = new Size(48, 48); // 默认大小
+        }
 
         public DesktopIcon Clone()
         {
@@ -87,7 +86,9 @@ namespace Layouter.Models
 
     public enum IconType
     {
-        Normal = 0,
-        Shell
+        Shortcut = 0,
+        Shell,
+        File,
+        Folder
     }
 }

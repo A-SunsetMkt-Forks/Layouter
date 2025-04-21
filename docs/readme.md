@@ -15,6 +15,9 @@
 - **Flexible customization**: Flexible style customization, change the window style at will
 - **Simple and quiet**: Simple、quiet and non-intrusive, use it with confidence
 
+## Changelog
+[changelog.md](./changelog.md)
+
 ## Shortcuts
 
 - Desktop window  
@@ -37,4 +40,4 @@ Issues and suggestions are welcome.
 
 ## License
 
-[Apache-2.0 license](../LICENSE)
+[Apache-2.0 license](LICENSE)
