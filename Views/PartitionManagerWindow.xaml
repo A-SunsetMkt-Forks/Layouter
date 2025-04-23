@@ -77,9 +77,8 @@
 
             <TextBlock Text="分区列表" Style="{StaticResource SectionTextBlockStyle}"/>
 
-            <DataGrid Grid.Row="1" ItemsSource="{Binding Partitions}" AutoGenerateColumns="False" 
-                      CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Extended"
-                      SelectedItem="{Binding SelectedPartition}" SelectionChanged="DataGrid_SelectionChanged">
+            <DataGrid Grid.Row="1" ItemsSource="{Binding Partitions}" AutoGenerateColumns="False"  CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Extended" 
+                       SelectedItem="{Binding SelectedPartition}" Style="{StaticResource LightBorderDataGridStyle}" SelectionChanged="DataGrid_SelectionChanged">
                 <DataGrid.Columns>
                     <DataGridCheckBoxColumn Header="选择" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="50"/>
                     <DataGridTextColumn Header="分区ID" Binding="{Binding PartitionId}" Width="200" IsReadOnly="True"/>

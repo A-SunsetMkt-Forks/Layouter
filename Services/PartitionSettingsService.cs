@@ -283,7 +283,7 @@ namespace Layouter.Services
             return new GlobalPartitionSettings
             {
                 TitleForeground = Colors.White,
-                TitleBackground = Colors.DodgerBlue,
+                TitleBackground = Colors.Black,
                 TitleFont = "Microsoft YaHei",
                 TitleAlignment = HorizontalAlignment.Left,
                 TitleFontSize = 14d,

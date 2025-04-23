@@ -214,11 +214,13 @@ namespace Layouter.Views
 
                 if (isMouseOver)
                 {
+                    vm.ContentBackground = new SolidColorBrush(Color.FromArgb(40, 0, 0, 0));
                     this.Opacity = 1.0;
                 }
                 else
                 {
-                    this.Opacity = originalOpacity * 0.8;
+                    vm.ContentBackground = new SolidColorBrush(Colors.Transparent);
+                    this.Opacity = originalOpacity * 0.7;
                 }
             }
         }

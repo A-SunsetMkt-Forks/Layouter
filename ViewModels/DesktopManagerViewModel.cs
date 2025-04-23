@@ -25,9 +25,9 @@ namespace Layouter.ViewModels
 
         private string name;
         private double opacity = 0.90;
-        private string backgroundColor;
+        private string backgroundColor = "Transparent";
         private SolidColorBrush titleForeground = new SolidColorBrush(Colors.White);
-        private SolidColorBrush titleBackground = new SolidColorBrush(Colors.DodgerBlue);
+        private SolidColorBrush titleBackground = new SolidColorBrush(Colors.Black);
         private FontFamily titleFont = new FontFamily("Microsoft YaHei");
         private double titleFontSize = 14.0;
         private HorizontalAlignment titleAlignment = HorizontalAlignment.Left;
@@ -35,6 +35,7 @@ namespace Layouter.ViewModels
         private double iconTextSize = 12.0;
         private bool isLocked = false;
 
+        private SolidColorBrush contentBackground = new SolidColorBrush(Colors.Transparent);
 
         public DesktopManagerViewModel()
         {
@@ -45,7 +46,7 @@ namespace Layouter.ViewModels
 
         public string windowId { get; set; }
 
-        public byte TitleBaseAlpha { get; private set; } = 64;//透明度：64/256
+        public byte TitleBaseAlpha { get; private set; } = 200;//透明度：200/256
 
         public string Name
         {
@@ -131,7 +132,10 @@ namespace Layouter.ViewModels
         // 分区背景颜色
         public string BackgroundColor
         {
-            get { return backgroundColor; }
+            get
+            {
+                return backgroundColor;
+            }
             set
             {
                 backgroundColor = value;
@@ -152,6 +156,12 @@ namespace Layouter.ViewModels
                     LockStateChanged?.Invoke(this, value);
                 }
             }
+        }
+
+        public SolidColorBrush ContentBackground
+        {
+            get => contentBackground;
+            set => SetProperty(ref contentBackground, value);
         }
 
         public IRelayCommand ArrangeIconsCommand { get; }
