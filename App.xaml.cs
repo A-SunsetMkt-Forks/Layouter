@@ -1,5 +1,7 @@
 using System.Configuration;
 using System.Data;
+using System.IO;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.DependencyInjection;
@@ -39,6 +41,9 @@ namespace Layouter
 
             serviceProvider = services.BuildServiceProvider();
             Ioc.Default.ConfigureServices(serviceProvider);
+
+            // 插件解析器
+            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
 
             // 初始化自启动设置
             GeneralSettingsService.Instance.InitializeAutoStart();
@@ -105,6 +110,63 @@ namespace Layouter
                 Log.Information($"保存分区配置失败: {ex.Message}");
             }
         }
+
+
+        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            try
+            {
+                // 获取请求的程序集名称（不含版本等信息）
+                string assemblyName = new AssemblyName(args.Name).Name;
+
+                // 1. 检查已提取的插件目录
+                string pluginsExtractPath = Path.Combine(Path.GetTempPath(), "Plugins");
+                if (Directory.Exists(pluginsExtractPath))
+                {
+                    // 搜索所有插件目录
+                    foreach (var pluginDir in Directory.GetDirectories(pluginsExtractPath))
+                    {
+                        // 查找可能的DLL
+                        string potentialDllPath = Path.Combine(pluginDir, $"{assemblyName}.dll");
+                        if (File.Exists(potentialDllPath))
+                        {
+                            return Assembly.LoadFrom(potentialDllPath);
+                        }
+
+                        // 查找可能的libs子目录
+                        string libsDir = Path.Combine(pluginDir, "libs");
+                        if (Directory.Exists(libsDir))
+                        {
+                            potentialDllPath = Path.Combine(libsDir, $"{assemblyName}.dll");
+                            if (File.Exists(potentialDllPath))
+                            {
+                                return Assembly.LoadFrom(potentialDllPath);
+                            }
+                        }
+                    }
+                }
+
+                // 2. 检查应用程序目录的libs文件夹
+                string appLibsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "libs");
+                if (Directory.Exists(appLibsDir))
+                {
+                    string potentialDllPath = Path.Combine(appLibsDir, $"{assemblyName}.dll");
+                    if (File.Exists(potentialDllPath))
+                    {
+                        return Assembly.LoadFrom(potentialDllPath);
+                    }
+                }
+
+                Console.WriteLine($"无法解析程序集: {args.Name}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"程序集解析过程中出错: {ex.Message}");
+                return null;
+            }
+        }
+
 
     }
 }

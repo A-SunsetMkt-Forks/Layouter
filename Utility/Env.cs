@@ -8,6 +8,8 @@ namespace Layouter.Utility
 {
     public static class Env
     {
+        public static string AppName { get; set; } = "Layouter";
+
         public static string HiddenFolderName { get; set; } = ".layouterhidden";
     }
 }

@@ -14,8 +14,7 @@
         AllowsTransparency="True"
         WindowStyle="None"
         Background="#20808080"
-        BorderBrush="#2F4F4F" 
-        BorderThickness="1"
+        BorderThickness="0"
         Opacity="{Binding Opacity}"
         AllowDrop="True"
         ResizeMode="CanResizeWithGrip"
@@ -38,82 +37,85 @@
     </Window.Resources>
 
     <Grid>
-        <Border CornerRadius="5" BorderThickness="1" BorderBrush="#CCCCCC">
+        <Border x:Name="MainBorder" CornerRadius="8" BorderThickness="0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*" x:Name="IconsRowDefinition"/>
                 </Grid.RowDefinitions>
 
                 <!-- 分区标题栏 -->
-                <Border Grid.Row="0" Background="{Binding TitleBackground}" CornerRadius="5,5,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Border Grid.Row="0" Background="{Binding TitleBackground}" CornerRadius="8,8,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown" >
+                    <Grid>
+                        <Label Background="Transparent" MouseDoubleClick="DoubleClickHandler" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Focusable="False" Padding="0" Margin="0" />
+                        <!-- 标题栏 -->
+                        <Grid x:Name="TitleBar" Height="30">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                    <Grid x:Name="TitleBar" Height="30">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <Grid Grid.Column="0">
-                            <TextBlock x:Name="TitleTextBlock" Text="{Binding Name}" Foreground="{Binding TitleForeground}"  Margin="10,0" FontSize="{Binding TitleFontSize}"
+                            <Grid Grid.Column="0">
+                                <TextBlock x:Name="TitleTextBlock" Text="{Binding Name}" Foreground="{Binding TitleForeground}"  Margin="10,0" FontSize="{Binding TitleFontSize}"
                                        FontFamily="{Binding TitleFont}" VerticalAlignment="Center" MouseDown="TitleTextBlock_MouseDown">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Style.Triggers>
-                                            <!-- 左对齐 -->
-                                            <DataTrigger Binding="{Binding TitleAlignment}" Value="Left">
-                                                <Setter Property="HorizontalAlignment" Value="Left"/>
-                                            </DataTrigger>
-                                            <!-- 居中 -->
-                                            <DataTrigger Binding="{Binding TitleAlignment}" Value="Center">
-                                                <Setter Property="HorizontalAlignment" Value="Center"/>
-                                            </DataTrigger>
-                                            <!-- 右对齐 -->
-                                            <DataTrigger Binding="{Binding TitleAlignment}" Value="Right">
-                                                <Setter Property="HorizontalAlignment" Value="Right"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <!-- 左对齐 -->
+                                                <DataTrigger Binding="{Binding TitleAlignment}" Value="Left">
+                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                </DataTrigger>
+                                                <!-- 居中 -->
+                                                <DataTrigger Binding="{Binding TitleAlignment}" Value="Center">
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                </DataTrigger>
+                                                <!-- 右对齐 -->
+                                                <DataTrigger Binding="{Binding TitleAlignment}" Value="Right">
+                                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
 
-                            <!-- 标题编辑框 -->
-                            <TextBox x:Name="TitleEditBox" Visibility="Collapsed" Margin="10,3" KeyDown="TitleEditBox_KeyDown" LostFocus="TitleEditBox_LostFocus"/>
+                                <!-- 标题编辑框 -->
+                                <TextBox x:Name="TitleEditBox" Visibility="Collapsed" Margin="10,3" KeyDown="TitleEditBox_KeyDown" LostFocus="TitleEditBox_LostFocus"/>
+                            </Grid>
+                            <!-- 功能按钮区域 -->
+                            <StackPanel Orientation="Horizontal" Grid.Column="1">
+                                <!-- 新增分区按钮 -->
+                                <Button Width="30" Height="30" ToolTip="新建分区"  Background="Transparent" BorderThickness="0" Click="NewPartition_Click">
+                                    <FluentIcons:SymbolIcon Symbol="Add" FontSize="16" Foreground="{Binding TitleForeground}" />
+                                </Button>
+
+                                <!-- 锁定按钮 -->
+                                <Button Width="30" Height="30" ToolTip="未锁定"  Background="Transparent" BorderThickness="0" Click="LockButton_Click" x:Name="LockButton">
+                                    <FluentIcons:SymbolIcon Symbol="LockOpen" FontSize="16" Foreground="{Binding TitleForeground}" x:Name="LockIcon" />
+                                </Button>
+
+                                <!-- 设置按钮 -->
+                                <Button Width="30" Height="30" ToolTip="设置" Background="Transparent" BorderThickness="0" Click="Settings_Click" x:Name="SettingsButton">
+                                    <FluentIcons:SymbolIcon Symbol="Settings" FontSize="16" Foreground="{Binding TitleForeground}" />
+                                </Button>
+                            </StackPanel>
+
+                            <!-- 设置菜单 -->
+                            <Popup x:Name="SettingsPopup" StaysOpen="False" PlacementTarget="{Binding ElementName=SettingsButton}" Placement="Bottom">
+                                <Border Background="White" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="3">
+                                    <StackPanel>
+                                        <Button Content="分区设置" Click="PartitionSettings_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
+                                        <Button Content="删除分区" Click="DeletePartition_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
+                                        <Button Content="对齐图标" Click="AutoArrange_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
+                                        <Button Content="对齐分区" Click="AlignPartitions_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
+                                    </StackPanel>
+                                </Border>
+                            </Popup>
                         </Grid>
-                        <!-- 功能按钮区域 -->
-                        <StackPanel Orientation="Horizontal" Grid.Column="1">
-                            <!-- 新增分区按钮 -->
-                            <Button Width="30" Height="30" ToolTip="新建分区"  Background="Transparent" BorderThickness="0" Click="NewPartition_Click">
-                                <FluentIcons:SymbolIcon Symbol="Add" FontSize="16" Foreground="{Binding TitleForeground}" />
-                            </Button>
-
-                            <!-- 锁定按钮 -->
-                            <Button Width="30" Height="30" ToolTip="未锁定"  Background="Transparent" BorderThickness="0" Click="LockButton_Click" x:Name="LockButton">
-                                <FluentIcons:SymbolIcon Symbol="LockOpen" FontSize="16" Foreground="{Binding TitleForeground}" x:Name="LockIcon" />
-                            </Button>
-
-                            <!-- 设置按钮 -->
-                            <Button Width="30" Height="30" ToolTip="设置" Background="Transparent" BorderThickness="0" Click="Settings_Click" x:Name="SettingsButton">
-                                <FluentIcons:SymbolIcon Symbol="Settings" FontSize="16" Foreground="{Binding TitleForeground}" />
-                            </Button>
-                        </StackPanel>
-
-                        <!-- 设置菜单 -->
-                        <Popup x:Name="SettingsPopup" StaysOpen="False" PlacementTarget="{Binding ElementName=SettingsButton}" Placement="Bottom">
-                            <Border Background="White" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="3">
-                                <StackPanel>
-                                    <Button Content="分区设置" Click="PartitionSettings_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
-                                    <Button Content="删除分区" Click="DeletePartition_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
-                                    <Button Content="对齐图标" Click="AutoArrange_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
-                                    <Button Content="对齐分区" Click="AlignPartitions_Click" Width="120" Height="30" Background="Transparent" BorderThickness="0"/>
-                                </StackPanel>
-                            </Border>
-                        </Popup>
                     </Grid>
                 </Border>
 
                 <!-- 图标区域 -->
-                <Border Grid.Row="1" Background="{Binding ContentBackground}"  CornerRadius="0,0,5,5">
+                <Border x:Name="IconsContainer" Grid.Row="1" Background="{Binding ContentBackground}" CornerRadius="0,0,8,8">
                     <ItemsControl ItemsSource="{Binding Icons}" Margin="5,5,5,5" 
                      AllowDrop="True" Background="Transparent"
                      x:Name="iconsContainer"

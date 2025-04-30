@@ -6,27 +6,32 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UseWPF>true</UseWPF>
-		<AssemblyVersion>1.0.1.0</AssemblyVersion>
-		<FileVersion>1.0.1.0</FileVersion>
+		<AssemblyVersion>1.0.2.0</AssemblyVersion>
+		<FileVersion>1.0.2.0</FileVersion>
 		<ApplicationIcon>Resources\icon.ico</ApplicationIcon>
 
 		<Product>桌面助手(Layouter)</Product>
 		<Authors>@VrezenStrijder</Authors>
 		<Copyright>Copyright © 2025 @VrezenStrijder. All rights reserved.</Copyright>
 		<AssemblyTitle>Layouter</AssemblyTitle>
-		<Version>1.0.1</Version>
+		<Version>1.0.2</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Remove="Plugins\Deprecated\**" />
 		<Compile Remove="Resources\Images\**" />
+		<EmbeddedResource Remove="Plugins\Deprecated\**" />
 		<EmbeddedResource Remove="Resources\Images\**" />
+		<None Remove="Plugins\Deprecated\**" />
 		<None Remove="Resources\Images\**" />
+		<Page Remove="Plugins\Deprecated\**" />
 		<Page Remove="Resources\Images\**" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Compile Remove="MainWindow.xaml.cs" />
 		<Compile Remove="Models\Configuration.cs" />
+		<Compile Remove="Plugins\Models\ParameterInfo.cs" />
 		<Compile Remove="Services\ConfigurationService.cs" />
 		<Compile Remove="Services\DataService.cs" />
 		<Compile Remove="Utility\Win32Util.cs" />
@@ -51,12 +56,14 @@
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
 		<PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
 		<PackageReference Include="Material.Icons.WPF" Version="2.3.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="Serilog" Version="4.2.0" />
 		<PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
 		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+		<PackageReference Include="System.IO.Compression" Version="4.3.0" />
 		<PackageReference Include="System.Management" Version="8.0.0" />
 	</ItemGroup>
 
@@ -67,8 +74,11 @@
 		<Reference Include="FluentIcons.Wpf">
 			<HintPath>libs\FluentIcons.Wpf.dll</HintPath>
 		</Reference>
+		<Reference Include="PluginEntry">
+		  <HintPath>libs\PluginEntry.dll</HintPath>
+		</Reference>
 		<Reference Include="Win32">
-			<HintPath>..\..\..\githubProjs\Layouter\libs\Win32.dll</HintPath>
+		  <HintPath>libs\Win32.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 

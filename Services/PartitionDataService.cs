@@ -26,7 +26,7 @@ namespace Layouter.Services
         private PartitionDataService()
         {
             // 配置保存目录
-            dataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Layouter");
+            dataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Env.AppName);
 
             // 确保目录存在
             if (!Directory.Exists(dataDirectory))

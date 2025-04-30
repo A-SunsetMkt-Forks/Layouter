@@ -15,6 +15,7 @@ using Layouter.ViewModels;
 using static Layouter.Utility.ShellUtil;
 using static System.Windows.Win32;
 using System.Text;
+using System.Net.NetworkInformation;
 
 namespace Layouter.Views
 {
@@ -31,6 +32,9 @@ namespace Layouter.Views
         private DateTime lastClickTime = DateTime.MinValue;
         private DesktopIcon lastClickedIcon = null;
         private const double DoubleClickTimeThreshold = 500; //毫秒
+
+        private bool isContainerClapsed = false;//图标容器是否折叠
+        private double windowHeight = 0;
 
         public DesktopManagerWindow()
         {
@@ -61,6 +65,8 @@ namespace Layouter.Views
 
             // 注册到窗口管理服务
             WindowManagerService.Instance.RegisterWindow(this);
+
+            windowHeight = this.Height;
         }
 
         public DesktopManagerWindow(string windowId) : this()
@@ -86,6 +92,7 @@ namespace Layouter.Views
 
             // 设置分区样式
             ApplyStyleSettings();
+
         }
 
         private void DesktopManagerWindow_PreviewDragOver(object sender, DragEventArgs e)
@@ -191,6 +198,7 @@ namespace Layouter.Views
         #endregion
 
         #region 窗口事件
+
         private void Window_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
             isMouseOver = true;
@@ -368,6 +376,11 @@ namespace Layouter.Views
             }
         }
 
+        private void DoubleClickHandler(object sender, MouseButtonEventArgs e)
+        {
+            SwitchContainerClapsedState();
+        }
+
         /// <summary>
         /// 在窗口初始化完成后自动开始编辑名称
         /// </summary>
@@ -433,6 +446,24 @@ namespace Layouter.Views
             catch (Exception ex)
             {
                 Log.Information($"保存标题编辑时出错: {ex.Message}");
+            }
+        }
+
+        private void SwitchContainerClapsedState()
+        {
+            if (isContainerClapsed)
+            {
+                //展开
+                IconsContainer.Visibility = Visibility.Visible;
+                this.Height = windowHeight;
+                isContainerClapsed = false;
+            }
+            else
+            {
+                //折叠
+                IconsContainer.Visibility = Visibility.Collapsed;
+                this.Height = TitleBar.Height;
+                isContainerClapsed = true;
             }
         }
 
