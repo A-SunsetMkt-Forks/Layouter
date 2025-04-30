@@ -7,6 +7,9 @@
 
 </div>
 
+## New version preview
+- Plugin functionality will be available soon :smile:
+
 ## Features
 
 - **Always on the desktop**: Desktop level window, even if you click "Show Desktop" and it still displays on the desktop, the same is true on windows 11
