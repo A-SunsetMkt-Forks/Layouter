@@ -1,0 +1,7 @@
+﻿plugin.zip
+├── plugin.json       # 插件描述文件
+├── icon.json         # 图标描述文件
+├── plugin.cs         # 插件主代码
+└── libs/             # 依赖库目录
+    ├── lib1.dll
+    └── lib2.dll
