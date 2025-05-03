@@ -16,6 +16,7 @@ using static Layouter.Utility.ShellUtil;
 using static System.Windows.Win32;
 using System.Text;
 using System.Net.NetworkInformation;
+using Window = System.Windows.Window;
 
 namespace Layouter.Views
 {
@@ -26,8 +27,9 @@ namespace Layouter.Views
         private bool isDragging = false;
         private DesktopIcon draggedIcon = null;
         private bool isMouseOver = false;
+        private bool isResizing = false; // 是否正在调整大小
         private double originalOpacity = 1.0; //窗口默认透明度
-
+        private bool isAdjustingSize = false; // 是否正在调整窗口大小
 
         private DateTime lastClickTime = DateTime.MinValue;
         private DesktopIcon lastClickedIcon = null;
@@ -55,6 +57,11 @@ namespace Layouter.Views
             MouseRightButtonDown += DesktopManagerWindow_MouseRightButtonDown;
             Closing += Window_Closing;
 
+            // 窗口大小调整事件
+            SizeChanged += Window_SizeChanged;
+            // 窗口状态变化事件
+            //StateChanged += Window_StateChanged;
+
             vm.LockStateChanged += (s, e) =>
             {
                 UpdateLockState(vm.IsLocked);
@@ -67,6 +74,9 @@ namespace Layouter.Views
             WindowManagerService.Instance.RegisterWindow(this);
 
             windowHeight = this.Height;
+
+            // 添加窗口消息钩子
+            SourceInitialized += DesktopManagerWindow_SourceInitialized;
         }
 
         public DesktopManagerWindow(string windowId) : this()
@@ -133,6 +143,8 @@ namespace Layouter.Views
 
             if (clickedElement != null && clickedElement.Tag is DesktopIcon icon)
             {
+                #region 自定义右键菜单
+
                 var iconCtxMenu = this.TryFindResource("IconContextMenu") as ContextMenu;
 
                 if (iconCtxMenu != null)
@@ -140,11 +152,13 @@ namespace Layouter.Views
                     iconCtxMenu.Tag = icon; //将图标传递给右键菜单项
                     iconCtxMenu.IsOpen = true;
                 }
+
+                #endregion
             }
             else
             {
                 // 点击空白区域，不弹出图标右键菜单
-                var contextMenu = this.TryFindResource("PartitionContextMenu") as ContextMenu;
+                var contextMenu = this.TryFindResource("PartitionContextMenu") as System.Windows.Controls.ContextMenu;
                 if (contextMenu != null)
                 {
                     contextMenu.IsOpen = true;
@@ -161,6 +175,38 @@ namespace Layouter.Views
             e.Cancel = true;
             this.Hide();
         }
+
+        private void DesktopManagerWindow_SourceInitialized(object sender, EventArgs e)
+        {
+            // 获取窗口句柄
+            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+
+            // 添加钩子处理窗口消息
+            HwndSource source = HwndSource.FromHwnd(hwnd);
+            source.AddHook(WndProc);
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            //判断当前窗口是否正常调整大小 (替代Window_SizeChanged判定)
+            if (msg == (int)WindowsMessage.WM_ENTERSIZEMOVE)
+            {
+                isResizing = true;
+                UpdateWindowOpacity();
+            }
+            else if (msg == (int)WindowsMessage.WM_EXITSIZEMOVE)
+            {
+                if (isResizing && Mouse.LeftButton != MouseButtonState.Pressed)
+                {
+                    isResizing = false;
+                    UpdateWindowOpacity();
+                }
+            }
+
+            return IntPtr.Zero;
+        }
+
+
 
         #endregion
 
@@ -214,13 +260,48 @@ namespace Layouter.Views
             UpdateWindowOpacity();
         }
 
+        /// <summary>
+        /// 窗口大小变化事件
+        /// </summary>
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            vm.PartitionWidth = this.Width;
+            vm.PartitionHeight = this.Height;
+
+            // 调整窗口尺寸
+            if (!isAdjustingSize)
+            {
+                //AdjustWindowSizeToIconGrid();
+            }
+
+            // 使用延迟重置调整状态
+            Task.Delay(500).ContinueWith(_ =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+
+                    (DataContext as DesktopManagerViewModel)?.ArrangeIcons();
+
+                    UpdateWindowOpacity();
+
+                    // 重置调整标志
+                    isAdjustingSize = false;
+                });
+            });
+        }
+
+        private void Window_StateChanged(object sender, EventArgs e)
+        {
+            UpdateWindowOpacity();
+        }
+
         private void UpdateWindowOpacity()
         {
             if (vm != null)
             {
                 originalOpacity = vm.Opacity;
 
-                if (isMouseOver)
+                if (isMouseOver || IsActive || isResizing)
                 {
                     vm.ContentBackground = new SolidColorBrush(Color.FromArgb(40, 0, 0, 0));
                     this.Opacity = 1.0;
@@ -232,6 +313,61 @@ namespace Layouter.Views
                 }
             }
         }
+
+        /// <summary>
+        /// 按图标大小的整倍数调整窗口尺寸
+        /// </summary>
+        //private void AdjustWindowSizeToIconGrid()
+        //{
+        //    if (vm == null)
+        //    {
+        //        return;
+        //    }
+
+        //    // 获取当前图标大小
+        //    double iconSize = 0;
+
+        //    switch (vm.IconSize)
+        //    {
+        //        case IconSize.Small:
+        //            iconSize = 32;
+        //            break;
+        //        case IconSize.Medium:
+        //            iconSize = 48;
+        //            break;
+        //        case IconSize.Large:
+        //            iconSize = 64;
+        //            break;
+        //        default:
+        //            iconSize = 48;
+        //            break;
+        //    }
+
+        //    // 考虑图标间距
+        //    var iconSpacing = DesktopManagerViewModel.IconSpacing;
+        //    double gridSize = iconSize + iconSpacing;
+
+        //    // 计算内容区域的宽高（减去标题栏高度）
+        //    double contentWidth = this.Width;
+        //    double contentHeight = this.Height - TitleBar.ActualHeight;
+
+        //    // 计算整倍数的宽高
+        //    int columnsCount = Math.Max(1, (int)Math.Ceiling(contentWidth / gridSize));
+        //    int rowsCount = Math.Max(1, (int)Math.Ceiling(contentHeight / gridSize));
+
+        //    // 调整窗口大小为整倍数
+        //    double newWidth = columnsCount * gridSize + iconSpacing;
+        //    double newHeight = rowsCount * gridSize + TitleBar.ActualHeight + iconSpacing;
+
+        //    // 如果大小有变化，则调整窗口大小
+        //    if (Math.Abs(this.Width - newWidth) > 1 || Math.Abs(this.Height - newHeight) > 1)
+        //    {
+        //        isAdjustingSize = true;
+
+        //        this.Width = newWidth;
+        //        this.Height = newHeight;
+        //    }
+        //}
 
         #endregion
 
@@ -653,56 +789,81 @@ namespace Layouter.Views
 
                     if (files != null && files.Length > 0)
                     {
-                        string filePath = files[0]; // 取第一个文件
+                        // 创建一个图标列表，用于存储所有拖放的图标
+                        List<DesktopIcon> newIcons = new List<DesktopIcon>();
 
-                        // 检查是否已经在这个分区中 - 如果已存在则静默返回，不提示
-                        if (viewModel.Icons.Any(i => i.IconPath.Equals(filePath, StringComparison.OrdinalIgnoreCase)))
+                        // 处理所有拖放的文件
+                        foreach (string filePath in files)
                         {
-                            return;
+                            // 检查是否已经在这个分区中 - 如果已存在则跳过此文件
+                            if (viewModel.Icons.Any(i => i.IconPath.Equals(filePath, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                continue;
+                            }
+
+                            // 为每个文件创建新的图标对象
+                            DesktopIcon icon = new DesktopIcon
+                            {
+                                Id = Guid.NewGuid().ToString(),
+                                Position = new Point(x, y),
+                                Size = iconSize,
+                                TextSize = viewModel.IconTextSize,
+                                IconPath = DesktopIconService.Instance.CombineHiddenPathWithIconPath(filePath)
+                            };
+
+                            // 根据文件类型设置图标属性
+                            if (filePath.Equals(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)))
+                            {
+                                string userProfile = ShellUtil.GetDisplayCurrentUserName();
+                                icon.Name = userProfile;
+                                icon.IconPath = ShellUtil.MapSpecialFolderByName(userProfile);
+                                icon.IconType = IconType.Shell;
+                            }
+                            else if (ShortCutUtil.IsShortcutPath(filePath))
+                            {
+                                icon.Name = Path.GetFileNameWithoutExtension(filePath);
+                                icon.IconType = IconType.Shortcut;
+                            }
+                            else if (Directory.Exists(filePath))
+                            {
+                                icon.Name = new DirectoryInfo(filePath).Name;
+                                icon.IconType = IconType.Folder;
+                            }
+                            else if (File.Exists(filePath))
+                            {
+                                icon.Name = new FileInfo(filePath).Name;
+                                icon.IconType = IconType.File;
+                            }
+                            else
+                            {
+                                icon.Name = ShellUtil.GetSpecialFolderDisplayName(filePath);
+                                icon.IconType = IconType.Shell;
+                            }
+
+                            if (flag)
+                            {
+                                //保持图标路径不变
+                                icon.IconPath = filePath;
+                            }
+
+                            // 将图标添加到列表中
+                            newIcons.Add(icon);
+
+                            // 稍微偏移下一个图标的位置，避免完全重叠
+                            x += 20;
+                            y += 20;
                         }
 
-                        newIcon = new DesktopIcon
+                        // 如果有图标被添加，则使用第一个图标作为newIcon（用于后续处理）
+                        if (newIcons.Count > 0)
                         {
-                            Id = Guid.NewGuid().ToString(),
-                            Position = new Point(x, y),
-                            Size = iconSize,
-                            TextSize = viewModel.IconTextSize,
-                            IconPath = DesktopIconService.Instance.CombineHiddenPathWithIconPath(filePath)
-                        };
+                            newIcon = newIcons[0];
 
-                        // 创建新的图标对象
-                        if (filePath.Equals(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)))
-                        {
-                            string userProfile = ShellUtil.GetDisplayCurrentUserName();
-                            newIcon.Name = userProfile;
-                            newIcon.IconPath = ShellUtil.MapSpecialFolderByName(userProfile);
-                            newIcon.IconType = IconType.Shell;
-                        }
-                        else if (ShortCutUtil.IsShortcutPath(filePath))
-                        {
-                            newIcon.Name = Path.GetFileNameWithoutExtension(filePath);
-                            newIcon.IconType = IconType.Shortcut;
-                        }
-                        else if (Directory.Exists(filePath))
-                        {
-                            newIcon.Name = new DirectoryInfo(filePath).Name;
-                            newIcon.IconType = IconType.Folder;
-                        }
-                        else if (File.Exists(filePath))
-                        {
-                            newIcon.Name = new FileInfo(filePath).Name;
-                            newIcon.IconType = IconType.File;
-                        }
-                        else
-                        {
-                            newIcon.Name = ShellUtil.GetSpecialFolderDisplayName(filePath);
-                            newIcon.IconType = IconType.Shell;
-                        }
-
-                        if (flag)
-                        {
-                            //保持图标路径不变
-                            newIcon.IconPath = filePath;
+                            // 将所有图标添加到视图模型中
+                            foreach (var icon in newIcons)
+                            {
+                                viewModel?.AddIcon(icon);
+                            }
                         }
                     }
                 }
@@ -716,48 +877,82 @@ namespace Layouter.Views
 
                         if (shellItems != null && shellItems.Count > 0)
                         {
-                            newIcon = CreateIconFromShellItem(shellItems[0], dropPoint, iconSize);
+                            // 创建一个图标列表，用于存储所有拖放的Shell项目
+                            List<DesktopIcon> shellIcons = new List<DesktopIcon>();
+
+                            // 处理所有拖放的Shell项目
+                            foreach (var shellItem in shellItems)
+                            {
+                                // 为每个Shell项目创建图标
+                                DesktopIcon icon = CreateIconFromShellItem(shellItem, dropPoint, iconSize);
+
+                                if (icon != null)
+                                {
+                                    // 将图标添加到列表和视图模型中
+                                    shellIcons.Add(icon);
+                                    viewModel?.AddIcon(icon);
+
+                                    // 稍微偏移下一个图标的位置，避免完全重叠
+                                    dropPoint.X += 20;
+                                    dropPoint.Y += 20;
+                                }
+                            }
+
+                            // 如果有图标被添加，则使用第一个图标作为newIcon（用于后续处理）
+                            if (shellIcons.Count > 0)
+                            {
+                                newIcon = shellIcons[0];
+                            }
                         }
                     }
                 }
 
-                // 如果成功创建了新图标，添加到当前分区
+                // 如果成功创建了新图标，保存分区数据
                 if (newIcon != null)
                 {
-                    viewModel?.AddIcon(newIcon);
+                    // 注意：图标已经在前面的代码中添加到视图模型中，这里不需要再次添加
 
                     // 保存分区数据
                     SavePartitionData();
 
                     // 如果是从桌面拖过来的文件，则隐藏桌面上的原图标
-                    if (!flag && data.GetDataPresent(DataFormats.FileDrop) && (newIcon.IconType != IconType.Shell))
+                    if (!flag && data.GetDataPresent(DataFormats.FileDrop))
                     {
                         var files = data.GetData(DataFormats.FileDrop) as string[];
                         if (files != null && files.Length > 0)
                         {
-                            string filePath = files[0];
-
-                            //确保图标路径为桌面图标路径
-                            filePath = DesktopIconService.Instance.RemoveHiddenPathInIconPath(filePath);
-                            // 隐藏桌面上的原图标
-                            bool hidden = DesktopIconService.Instance.HideDesktopIcon(filePath);
-
-                            if (!hidden)
+                            // 处理所有拖放的文件
+                            foreach (string filePath in files)
                             {
-                                Log.Information($"警告：无法隐藏桌面上的图标，但仍会将其添加到分区：{filePath}");
-                            }
-                            else
-                            {
-                                Log.Information($"成功隐藏桌面上的图标：{filePath}");
+                                // 跳过特殊Shell类型的图标
+                                bool isShellType = viewModel.Icons.Any(i => i.IconPath.Equals(filePath, StringComparison.OrdinalIgnoreCase) && i.IconType == IconType.Shell);
+                                if (isShellType)
+                                {
+                                    continue;
+                                }
+
+                                //确保图标路径为桌面图标路径
+                                string desktopPath = DesktopIconService.Instance.RemoveHiddenPathInIconPath(filePath);
+                                // 隐藏桌面上的原图标
+                                bool hidden = DesktopIconService.Instance.HideDesktopIcon(desktopPath);
+
+                                if (!hidden)
+                                {
+                                    Log.Information($"警告：无法隐藏桌面上的图标，但仍会将其添加到分区：{desktopPath}");
+                                }
+                                else
+                                {
+                                    Log.Information($"成功隐藏桌面上的图标：{desktopPath}");
+                                }
                             }
                         }
                     }
-                    else if (newIcon.IconType == IconType.Shell)
+                    // 处理Shell类型的图标
+                    foreach (var icon in viewModel.Icons.Where(i => i.IconType == IconType.Shell))
                     {
-
-                        var filePath = DesktopIconService.Instance.RemoveHiddenPathInIconPath(newIcon.IconPath);
+                        var filePath = DesktopIconService.Instance.RemoveHiddenPathInIconPath(icon.IconPath);
                         // 隐藏桌面上的原图标
-                        bool hidden = DesktopIconService.Instance.HideDesktopIcon(filePath);
+                        DesktopIconService.Instance.HideDesktopIcon(filePath);
                     }
 
                     // 延迟执行排列，确保新图标已经加入集合
@@ -865,7 +1060,7 @@ namespace Layouter.Views
             {
                 // 获取菜单项的Tag，即对应的DesktopIcon对象
                 var menuItem = sender as MenuItem;
-                var contextMenu = menuItem?.Parent as ContextMenu;
+                var contextMenu = menuItem?.Parent as System.Windows.Controls.ContextMenu;
 
                 //获取在DesktopManagerWindow_MouseRightButtonDown事件中设置的Tag
                 if (contextMenu?.Tag is DesktopIcon icon)
@@ -886,7 +1081,7 @@ namespace Layouter.Views
             {
                 // 获取菜单项的Tag，即对应的DesktopIcon对象
                 var menuItem = sender as MenuItem;
-                var contextMenu = menuItem?.Parent as ContextMenu;
+                var contextMenu = menuItem?.Parent as System.Windows.Controls.ContextMenu;
 
                 //获取在DesktopManagerWindow_MouseRightButtonDown事件中设置的Tag
                 if (contextMenu?.Tag is DesktopIcon icon)
@@ -930,7 +1125,7 @@ namespace Layouter.Views
             {
                 // 获取菜单项的Tag，即对应的DesktopIcon对象
                 var menuItem = sender as MenuItem;
-                var contextMenu = menuItem?.Parent as ContextMenu;
+                var contextMenu = menuItem?.Parent as System.Windows.Controls.ContextMenu;
 
                 //获取在DesktopManagerWindow_MouseRightButtonDown事件中设置的Tag
                 if (contextMenu?.Tag is DesktopIcon icon)

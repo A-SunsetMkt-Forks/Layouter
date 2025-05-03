@@ -6,15 +6,15 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UseWPF>true</UseWPF>
-		<AssemblyVersion>1.0.2.0</AssemblyVersion>
-		<FileVersion>1.0.2.0</FileVersion>
+		<AssemblyVersion>1.0.3.0</AssemblyVersion>
+		<FileVersion>1.0.3.0</FileVersion>
 		<ApplicationIcon>Resources\icon.ico</ApplicationIcon>
 
 		<Product>桌面助手(Layouter)</Product>
 		<Authors>@VrezenStrijder</Authors>
 		<Copyright>Copyright © 2025 @VrezenStrijder. All rights reserved.</Copyright>
 		<AssemblyTitle>Layouter</AssemblyTitle>
-		<Version>1.0.2</Version>
+		<Version>1.0.3</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -34,6 +34,7 @@
 		<Compile Remove="Plugins\Models\ParameterInfo.cs" />
 		<Compile Remove="Services\ConfigurationService.cs" />
 		<Compile Remove="Services\DataService.cs" />
+		<Compile Remove="Utility\ShellContextMenu.cs" />
 		<Compile Remove="Utility\Win32Util.cs" />
 		<Compile Remove="ViewModels\AddPartitionViewModel.cs" />
 		<Compile Remove="ViewModels\Feature1ViewModel.cs" />

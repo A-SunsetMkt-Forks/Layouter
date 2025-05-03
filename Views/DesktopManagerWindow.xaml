@@ -138,7 +138,7 @@
 
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid Tag="{Binding}" MouseLeftButtonDown="Icon_MouseDown" MouseLeftButtonUp="Icon_MouseUp" ContextMenu="{StaticResource IconContextMenu}" >
+                                <Grid Tag="{Binding}" MouseLeftButtonDown="Icon_MouseDown" MouseLeftButtonUp="Icon_MouseUp" >
                                     <Grid.Style>
                                         <Style TargetType="Grid">
                                             <Setter Property="Background" Value="Transparent" />

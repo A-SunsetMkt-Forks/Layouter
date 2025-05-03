@@ -4,7 +4,9 @@ using System.Linq;
 using System.Management;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Windows.Interop;
+using System.Windows.Media;
 using Microsoft.VisualBasic;
 
 namespace Layouter.Utility
@@ -57,5 +59,20 @@ namespace Layouter.Utility
             return flag.Value;
         }
 
+        public static Size MeasureText(string text, FontFamily fontFamily, double fontSize, FontStyle fontStyle, FontWeight fontWeight)
+        {
+            TextBlock tb = new TextBlock
+            {
+                Text = text,
+                FontFamily = fontFamily,
+                FontSize = fontSize,
+                FontStyle = fontStyle,
+                FontWeight = fontWeight
+            };
+
+            // 先设置约束
+            tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            return tb.DesiredSize;
+        }
     }
 }

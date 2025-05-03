@@ -13,15 +13,18 @@ namespace Layouter.ViewModels
 {
     public class DesktopManagerViewModel : ObservableObject
     {
+
         private ObservableCollection<DesktopIcon> icons = new ObservableCollection<DesktopIcon>();
         public ObservableCollection<DesktopIcon> Icons => icons;
 
-        //锁定状态变更事件
+        // 锁定状态变更事件
         public event EventHandler<bool> LockStateChanged;
 
-        private const double IconWidth = 64;
-        private const double IconHeight = 64;
-        private const double IconSpacing = 10;
+        // 图标间距
+        public const double IconSpacing = 10;
+
+        private double IconAreaWidth = 64;
+        private double IconAreaHeight = 64;
 
         private string name;
         private double opacity = 0.90;
@@ -32,8 +35,13 @@ namespace Layouter.ViewModels
         private double titleFontSize = 14.0;
         private HorizontalAlignment titleAlignment = HorizontalAlignment.Left;
         private IconSize iconSize = IconSize.Medium;
+        private Size iconSizeValue = new Size(48, 48);
         private double iconTextSize = 12.0;
         private bool isLocked = false;
+
+        private double partitionWidth = 400;
+        private double partitionHeight = 300;
+
 
         private SolidColorBrush contentBackground = new SolidColorBrush(Colors.Transparent);
 
@@ -52,6 +60,19 @@ namespace Layouter.ViewModels
         {
             get => name;
             set => SetProperty(ref name, value);
+        }
+
+
+        public double PartitionWidth
+        {
+            get => partitionWidth;
+            set => SetProperty(ref partitionWidth, value);
+        }
+
+        public double PartitionHeight
+        {
+            get => partitionHeight;
+            set => SetProperty(ref partitionHeight, value);
         }
 
         public SolidColorBrush TitleForeground
@@ -178,10 +199,10 @@ namespace Layouter.ViewModels
             foreach (var icon in Icons)
             {
                 // 检查是否需要换行
-                if (x + IconWidth + IconSpacing > GetPartitionWidth() && x > IconSpacing)
+                if (x + IconAreaWidth + IconSpacing > PartitionWidth && x > IconSpacing)
                 {
                     x = IconSpacing;
-                    y += maxHeight + IconSpacing;
+                    y += Math.Max(maxHeight + IconSpacing, IconAreaHeight);
                     maxHeight = 0;
                 }
 
@@ -189,9 +210,11 @@ namespace Layouter.ViewModels
                 icon.Position = new Point(x, y);
 
                 // 更新位置
-                x += IconWidth + IconSpacing;
-                maxHeight = Math.Max(maxHeight, IconHeight);
+                x += IconAreaWidth + IconSpacing;
+                maxHeight = Math.Max(maxHeight, IconAreaHeight);
             }
+
+
         }
 
         public void SwitchLockState()
@@ -206,35 +229,44 @@ namespace Layouter.ViewModels
 
         private void UpdateIconSize()
         {
-            Size newSize;
             switch (IconSize)
             {
                 case IconSize.Small:
-                    newSize = new Size(32, 32);
+                    iconSizeValue = new Size(32, 32);
+                    IconAreaWidth = 44;
+                    IconAreaHeight = 44;
                     break;
                 case IconSize.Large:
-                    newSize = new Size(64, 64);
+                    iconSizeValue = new Size(64, 64);
+                    IconAreaWidth = 84;
+                    IconAreaHeight = 84;
                     break;
                 case IconSize.Medium:
                 default:
-                    newSize = new Size(48, 48);
+                    iconSizeValue = new Size(48, 48);
+                    IconAreaWidth = 64;
+                    IconAreaHeight = 64;
                     break;
             }
 
             // 更新所有图标的尺寸
             foreach (var icon in Icons)
             {
-                icon.Size = newSize;
+                icon.Size = iconSizeValue;
             }
 
             // 重新排列图标
             ArrangeIcons();
         }
 
-        private double GetPartitionWidth()
+
+        /// <summary>
+        /// 获取分区窗口大小
+        /// </summary>
+        /// <returns>窗口大小</returns>
+        public Size GetPartitionSize()
         {
-            // 假设窗口宽度为有效区域宽度
-            return 400; // 这是默认值，实际使用时应该获取窗口的实际宽度
+            return new Size(partitionWidth, partitionHeight);
         }
 
         public void AddIcon(DesktopIcon icon)

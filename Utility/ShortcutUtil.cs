@@ -45,7 +45,7 @@ namespace Layouter.Utility
         /// 根据快捷方式路径解析目标路径
         /// </summary>
         /// <param name="shortcutPath">快捷方式路径</param>
-        private static string ResolveShortcut(string shortcutPath)
+        public static string ResolveShortcut(string shortcutPath)
         {
             Type t = Type.GetTypeFromProgID("WScript.Shell");
             dynamic shell = Activator.CreateInstance(t);
