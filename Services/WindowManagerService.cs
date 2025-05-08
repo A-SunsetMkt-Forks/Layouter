@@ -103,6 +103,57 @@ namespace Layouter.Services
             }
         }
 
+        /// <summary>
+        /// 对齐所有分区窗口
+        /// </summary>
+        public void ArrangeAllPartitionWindows()
+        {
+            try
+            {
+                isArrangingWindows = true;
+                var windows = GetAllWindows();
+                if (windows.Count == 0)
+                {
+                    return;
+                }
+                // 获取屏幕工作区尺寸
+                double screenWidth = SystemParameters.WorkArea.Width;
+                double screenHeight = SystemParameters.WorkArea.Height;
+
+                // 计算每个窗口的理想尺寸
+                int numWindows = windows.Count;
+                int numCols = (int)Math.Ceiling(Math.Sqrt(numWindows));
+                int numRows = (int)Math.Ceiling((double)numWindows / numCols);
+
+                double windowWidth = (screenWidth - (numCols + 1) * WindowMargin) / numCols;
+                double windowHeight = (screenHeight - (numRows + 1) * WindowMargin) / numRows;
+
+                // 分配窗口位置
+                for (int i = 0; i < windows.Count; i++)
+                {
+                    int row = i / numCols;
+                    int col = i % numCols;
+
+                    // 计算窗口位置，考虑边距
+                    double left = col * (windowWidth + WindowMargin) + WindowMargin;
+                    double top = row * (windowHeight + WindowMargin) + WindowMargin;
+
+                    // 设置窗口位置和大小
+                    windows[i].Left = left;
+                    windows[i].Top = top;
+                    windows[i].Width = windowWidth;
+                    windows[i].Height = windowHeight;
+
+                    // 保存分区数据
+                    PartitionDataService.Instance.SavePartitionData(windows[i]);
+                }
+            }
+            finally
+            {
+                isArrangingWindows = false;
+            }
+        }
+
         private void PositionNewWindow(DesktopManagerWindow newWindow)
         {
             var visibleWindows = managedWindows
@@ -207,57 +258,6 @@ namespace Layouter.Services
             catch (Exception ex)
             {
                 Log.Information($"删除分区配置时出错: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 对齐所有分区窗口
-        /// </summary>
-        public void ArrangeAllPartitionWindows()
-        {
-            try
-            {
-                isArrangingWindows = true;
-                var windows = GetAllWindows();
-                if (windows.Count == 0)
-                {
-                    return;
-                }
-                // 获取屏幕工作区尺寸
-                double screenWidth = SystemParameters.WorkArea.Width;
-                double screenHeight = SystemParameters.WorkArea.Height;
-
-                // 计算每个窗口的理想尺寸
-                int numWindows = windows.Count;
-                int numCols = (int)Math.Ceiling(Math.Sqrt(numWindows));
-                int numRows = (int)Math.Ceiling((double)numWindows / numCols);
-
-                double windowWidth = (screenWidth - (numCols + 1) * WindowMargin) / numCols;
-                double windowHeight = (screenHeight - (numRows + 1) * WindowMargin) / numRows;
-
-                // 分配窗口位置
-                for (int i = 0; i < windows.Count; i++)
-                {
-                    int row = i / numCols;
-                    int col = i % numCols;
-
-                    // 计算窗口位置，考虑边距
-                    double left = col * (windowWidth + WindowMargin) + WindowMargin;
-                    double top = row * (windowHeight + WindowMargin) + WindowMargin;
-
-                    // 设置窗口位置和大小
-                    windows[i].Left = left;
-                    windows[i].Top = top;
-                    windows[i].Width = windowWidth;
-                    windows[i].Height = windowHeight;
-
-                    // 保存分区数据
-                    PartitionDataService.Instance.SavePartitionData(windows[i]);
-                }
-            }
-            finally
-            {
-                isArrangingWindows = false;
             }
         }
 

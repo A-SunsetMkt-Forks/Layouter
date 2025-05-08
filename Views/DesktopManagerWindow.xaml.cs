@@ -143,15 +143,18 @@ namespace Layouter.Views
 
             if (clickedElement != null && clickedElement.Tag is DesktopIcon icon)
             {
+                //加载系统右键菜单
+                ShellContextMenu.ShowContextMenuForIcon(icon, e.GetPosition(this), this);
+
                 #region 自定义右键菜单
 
-                var iconCtxMenu = this.TryFindResource("IconContextMenu") as ContextMenu;
+                //var iconCtxMenu = this.TryFindResource("IconContextMenu") as ContextMenu;
 
-                if (iconCtxMenu != null)
-                {
-                    iconCtxMenu.Tag = icon; //将图标传递给右键菜单项
-                    iconCtxMenu.IsOpen = true;
-                }
+                //if (iconCtxMenu != null)
+                //{
+                //    iconCtxMenu.Tag = icon; //将图标传递给右键菜单项
+                //    iconCtxMenu.IsOpen = true;
+                //}
 
                 #endregion
             }

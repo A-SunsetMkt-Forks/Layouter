@@ -9,27 +9,21 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="Plugins\PluginDemoWindow.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="Plugins\PluginsManagerWindow.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Update="Views\PartitionManagerWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\UpdateWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Plugins\PluginDemoWindow.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="Plugins\PluginsManagerWindow.xaml">
-      <SubType>Designer</SubType>
-    </Page>
     <Page Update="Styles\TrayIconResources.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Views\PartitionManagerWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\UpdateWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

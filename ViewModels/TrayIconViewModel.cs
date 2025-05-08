@@ -17,7 +17,7 @@ namespace Layouter.ViewModels
 {
     public class TrayIconViewModel : ObservableObject
     {
-        private TaskbarIcon _trayIcon;
+        private TaskbarIcon trayIcon;
 
         public ICommand NewWindowCommand { get; }
         public ICommand WindowSettingCommand { get; }
@@ -32,7 +32,7 @@ namespace Layouter.ViewModels
 
         public void SetTrayIcon(TaskbarIcon trayIcon)
         {
-            _trayIcon = trayIcon;
+            this.trayIcon = trayIcon;
 
             // 初始化托盘菜单
             InitializeTrayMenu();
@@ -45,9 +45,9 @@ namespace Layouter.ViewModels
                 // 初始化托盘菜单管理器
                 TrayMenuService.Instance.Initialize(this);
 
-                if (_trayIcon != null)
+                if (trayIcon != null)
                 {
-                    _trayIcon.ContextMenu = TrayMenuService.Instance.GetTrayMenu();
+                    trayIcon.ContextMenu = TrayMenuService.Instance.GetTrayMenu();
                 }
             }
             catch (Exception ex)

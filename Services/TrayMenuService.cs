@@ -95,6 +95,11 @@ namespace Layouter.Services
             autoStartMenuItem.Items.Add(autoStartToggleItem);
             menuItems["AutoStartToggle"] = autoStartToggleItem;
 
+            // 桌面双击菜单项
+            //var desktopEventMenuItem = CreateMenuItem("桌面双击事件");
+            //trayMenu.Items.Add(desktopEventMenuItem);
+            //menuItems["DesktopEvent"] = desktopEventMenuItem;
+
             // 添加分隔符
             trayMenu.Items.Add(new Separator());
         }
@@ -137,8 +142,18 @@ namespace Layouter.Services
             trayMenu.Items.Add(aboutMenuItem);
             menuItems["About"] = aboutMenuItem;
 
-            var versionMenuItem = CreateMenuItem($"版本({Assembly.GetExecutingAssembly().GetName().Version})");
+            var versionMenuItem = CreateMenuItem($"当前版本({Assembly.GetExecutingAssembly().GetName().Version})");
             aboutMenuItem.Items.Add(versionMenuItem);
+
+            var checkNewMenuItem = CreateMenuItem($"检测新版本", IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.New, Colors.DodgerBlue));
+            aboutMenuItem.Items.Add(checkNewMenuItem);
+
+            checkNewMenuItem.Click += (s, e) =>
+            {
+
+                UpdateWindow updateWindow = new UpdateWindow();
+                updateWindow.ShowDialog();
+            };
 
             var contactMenuItem = CreateMenuItem($"欢迎建议 (@VrezenStrijder)", IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.ContactCardLink, Colors.DodgerBlue));
             contactMenuItem.Click += (s, e) =>
@@ -155,6 +170,7 @@ namespace Layouter.Services
             exitItem.Click += (s, e) => viewModel.ExitCommand.Execute(null);
             trayMenu.Items.Add(exitItem);
         }
+
 
         /// <summary>
         /// 获取托盘菜单
@@ -208,6 +224,7 @@ namespace Layouter.Services
 
             return menuItem;
         }
+
 
 
     }
