@@ -9,6 +9,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
+using System.Windows.Shapes;
 using Layouter.Models;
 using Microsoft.CodeAnalysis;
 using static System.Windows.Win32;
@@ -26,51 +27,60 @@ namespace Layouter.Utility
         /// <param name="icon">桌面图标</param>
         /// <param name="point">菜单显示位置</param>
         /// <param name="parentWindow">父窗口</param>
-        public static void ShowContextMenuForIcon(DesktopIcon icon, Point point, Window parentWindow)
+        public static bool ShowContextMenuForIcon(DesktopIcon icon, Point point, Window parentWindow)
         {
             if (icon == null || string.IsNullOrEmpty(icon.IconPath))
             {
-                MessageBox.Show("无效的图标", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
+                Log.Error("无效的图标");
+                return false;
             }
 
             bool isSpecialObj = false;
             string path = icon.IconPath;
 
-            // 确保路径存在
-            if (!File.Exists(path) && !Directory.Exists(path))
+            try
             {
-                // 判断是否是系统图标
-                var systemIconType = ShellUtil.GetSystemIconType(path);
-                if (systemIconType == null)
+                // 确保路径存在
+                if (!File.Exists(path) && !Directory.Exists(path))
                 {
-                    MessageBox.Show("图标路径不存在", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-                else
-                {
-                    // 获取系统图标路径
-                    switch (systemIconType.Value)
+                    // 判断是否是系统图标
+                    var systemIconType = ShellUtil.GetSystemIconType(path);
+
+                    if (systemIconType != null)
                     {
-                        case SystemIconType.UserFiles:
-                            path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                            break;
-                        default:
-                            path = icon.IconPath;
-                            isSpecialObj = true;
-                            break;
+                        // 获取系统图标路径
+                        switch (systemIconType.Value)
+                        {
+                            case SystemIconType.UserFiles:
+                                path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                                break;
+                            default:
+                                path = icon.IconPath;
+                                isSpecialObj = true;
+                                break;
+                        }
+
                     }
-
+                    //非桌面图标,作为其他Windows Shell对象处理
+                    else
+                    {
+                        isSpecialObj = true;
+                    }
                 }
+
+                // 将菜单显示位置转换为屏幕坐标
+                Point windowPos = parentWindow.PointToScreen(new Point(0, 0));
+                point.X = point.X + windowPos.X;
+                point.Y = point.Y + windowPos.Y;
+
+                // 显示上下文菜单，确保使用正确的窗口和位置
+                return ShowContextMenu(path, point, parentWindow, isSpecialObj);
             }
-
-            // 将菜单显示位置转换为屏幕坐标
-            Point windowPos = parentWindow.PointToScreen(new Point(0, 0));
-            point.X = point.X + windowPos.X;
-            point.Y = point.Y + windowPos.Y;
-
-            // 显示上下文菜单，确保使用正确的窗口和位置
-            ShowContextMenu(path, point, parentWindow, isSpecialObj);
+            catch
+            {
+                Log.Error("图标路径不存在");
+                return false;
+            }
         }
 
         /// <summary>
@@ -80,12 +90,12 @@ namespace Layouter.Utility
         /// <param name="point">菜单显示位置</param>
         /// <param name="parentWindow">父窗口</param>
         /// <param name="isSpecialObj">是否特殊桌面图标</param>
-        public static void ShowContextMenu(string filePath, Point point, Window parentWindow, bool isSpecialObj = false)
+        public static bool ShowContextMenu(string filePath, Point point, Window parentWindow, bool isSpecialObj = false)
         {
             if (!isSpecialObj && (string.IsNullOrEmpty(filePath) || !File.Exists(filePath) && !Directory.Exists(filePath)))
             {
-                MessageBox.Show("指定的文件或文件夹不存在", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
+                Log.Error("指定的文件或文件夹不存在");
+                return false;
             }
 
             IntPtr handle = (parentWindow != null) ? new WindowInteropHelper(parentWindow).Handle : IntPtr.Zero;
@@ -111,8 +121,13 @@ namespace Layouter.Utility
 
                 if (pidl == IntPtr.Zero)
                 {
-                    MessageBox.Show("无法获取文件的PIDL", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
+                    uint attrs;
+                    int hr2 = SHParseDisplayName(filePath, IntPtr.Zero, out pidl, 0, out attrs);
+                    if (hr2 != 0 || pidl == IntPtr.Zero)
+                    {
+                        Log.Error("无法获取文件的PIDL");
+                        return false;
+                    }
                 }
 
                 Guid guidShellFolder = new Guid("000214E6-0000-0000-C000-000000000046");
@@ -121,8 +136,8 @@ namespace Layouter.Utility
                 int result = SHBindToParent(pidl, ref guidShellFolder, out ptrShellFolder, out pidlLasts[0]);
                 if (result != 0)
                 {
-                    MessageBox.Show("无法获取文件的Shell文件夹", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
+                    Log.Error("无法获取文件的Shell文件夹");
+                    return false;
                 }
                 IShellFolder shellFolder = (IShellFolder)Marshal.GetTypedObjectForIUnknown(ptrShellFolder, typeof(IShellFolder));
 
@@ -130,8 +145,8 @@ namespace Layouter.Utility
                 int hr = shellFolder.GetUIObjectOf(handle, (uint)1, pidlLasts, ref guidContextMenu, IntPtr.Zero, out ptrContextMenu);
                 if (hr != 0 || ptrContextMenu == IntPtr.Zero)
                 {
-                    MessageBox.Show("无法获取上下文菜单", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
+                    Log.Error("无法获取上下文菜单");
+                    return false;
                 }
 
                 IContextMenu3 contextMenu = (IContextMenu3)Marshal.GetTypedObjectForIUnknown(ptrContextMenu, typeof(IContextMenu3));
@@ -194,6 +209,7 @@ namespace Layouter.Utility
                 }
             }
 
+            return true;
         }
 
     }

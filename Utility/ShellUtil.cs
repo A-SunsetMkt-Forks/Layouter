@@ -15,6 +15,9 @@ using System.Security.Principal;
 using Newtonsoft.Json.Linq;
 using System.Runtime.ConstrainedExecution;
 using Microsoft.Win32;
+using System.Windows;
+using System.Drawing;
+using FluentIcons.Common;
 
 namespace Layouter.Utility
 {
@@ -212,12 +215,15 @@ namespace Layouter.Utility
                 // 对于常规文件路径和CLSID路径的处理方式不同
                 if (path.StartsWith("::"))
                 {
+                    path = $"shell:{path}";//转换为安全格式
+
                     // 对于CLSID路径，使用SHParseDisplayName获取PIDL
                     uint sfgao;
-                    int hr = (int)SHParseDisplayName(path, IntPtr.Zero, out pidl, 0, out sfgao);
+                    int hr = SHParseDisplayName(path, IntPtr.Zero, out pidl, 0, out sfgao);
 
                     if (hr != 0 || pidl == IntPtr.Zero)
                     {
+                        Log.Error(Marshal.GetExceptionForHR(hr).Message);
                         return null;
                     }
                 }
@@ -250,6 +256,10 @@ namespace Layouter.Utility
 
                         DestroyIcon(shfi.hIcon);
                     }
+                    else
+                    {
+                        iconSource = GetDefaultIcon();
+                    }
                 }
             }
             catch (Exception ex)
@@ -266,6 +276,30 @@ namespace Layouter.Utility
             }
 
             return iconSource;
+        }
+
+        /// <summary>
+        /// 获取默认图标
+        /// </summary>
+        public static BitmapSource GetDefaultIcon()
+        {
+            SHSTOCKICONINFO info = new SHSTOCKICONINFO();
+            info.cbSize = (uint)Marshal.SizeOf(typeof(SHSTOCKICONINFO));
+            int hResult = SHGetStockIconInfo(SHSTOCKICONID.SIID_SHIELD, SHGSI.SHGSI_ICON | SHGSI.SHGSI_LARGEICON, ref info);
+
+            BitmapSource source = null;
+            if (hResult == 0 && info.hIcon != IntPtr.Zero)
+            {
+                //Icon icon = (Icon)Icon.FromHandle(info.hIcon).Clone(); 
+                source = Imaging.CreateBitmapSourceFromHIcon(info.hIcon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                DestroyIcon(info.hIcon);
+            }
+            else
+            {
+                source = Imaging.CreateBitmapSourceFromHIcon(SystemIcons.Application.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            }
+
+            return source;
         }
 
 

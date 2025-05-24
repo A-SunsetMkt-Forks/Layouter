@@ -16,6 +16,7 @@ using System.Diagnostics;
 using Newtonsoft.Json;
 using System.Windows.Media.Media3D;
 using System.IO;
+using PluginEntry;
 
 namespace Layouter.Services
 {
@@ -60,6 +61,9 @@ namespace Layouter.Services
 
             // 创建基本菜单项
             CreateBasicMenuItems();
+
+            // 创建插件菜单项
+            CreatePluginMenuItems();
 
             // 创建关于和退出菜单项
             CreateAboutAndExitMenuItems();
@@ -133,6 +137,30 @@ namespace Layouter.Services
         }
 
         /// <summary>
+        /// 创建插件菜单项
+        /// </summary>
+        private void CreatePluginMenuItems()
+        {
+            // 插件子菜单
+            var pluginsMenuItem = CreateMenuItem("插件", IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.PlugConnected, Colors.DodgerBlue));
+            trayMenu.Items.Add(pluginsMenuItem);
+            menuItems["Plugins"] = pluginsMenuItem;
+
+            // 插件管理菜单项
+            var pluginManagerItem = CreateMenuItem("插件管理");
+            pluginManagerItem.Click += (s, e) => ShowPluginManager();
+            pluginsMenuItem.Items.Add(pluginManagerItem);
+
+            // 创建插件菜单项
+            var createPluginItem = CreateMenuItem("创建插件");
+            createPluginItem.Click += (s, e) => CreateNewPlugin();
+            pluginsMenuItem.Items.Add(createPluginItem);
+
+            // 添加分隔符
+            trayMenu.Items.Add(new Separator());
+        }
+
+        /// <summary>
         /// 创建退出菜单项
         /// </summary>
         private void CreateAboutAndExitMenuItems()
@@ -170,7 +198,6 @@ namespace Layouter.Services
             exitItem.Click += (s, e) => viewModel.ExitCommand.Execute(null);
             trayMenu.Items.Add(exitItem);
         }
-
 
         /// <summary>
         /// 获取托盘菜单
@@ -221,11 +248,51 @@ namespace Layouter.Services
                 }
             }
 
-
             return menuItem;
         }
 
+        /// <summary>
+        /// 显示插件管理窗口
+        /// </summary>
+        private void ShowPluginManager()
+        {
+            try
+            {
+                var createFunc = () =>
+                {
+                    return new PluginsManagerWindow();
+                };
 
+                SingletonWindowManager.Instance.ShowWindow<PluginsManagerWindow>(createFunc, false);
+            }
+            catch (Exception ex)
+            {
+                Log.Information($"显示插件管理窗口时出错: {ex.Message}");
+                MessageBox.Show($"显示插件管理窗口时出错: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CreateNewPlugin()
+        {
+            try
+            {
+                var createFunc = () =>
+                {
+                    var window = new PluginsManagerWindow();
+                    window.CreatePluginCommand.Execute(null);
+
+                    return window;
+                };
+
+                SingletonWindowManager.Instance.ShowWindow<PluginsManagerWindow>(createFunc, false);
+            }
+            catch (Exception ex)
+            {
+                Log.Information($"显示创建插件窗口时出错: {ex.Message}");
+                MessageBox.Show($"显示创建插件窗口时出错: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+        }
 
     }
 }
