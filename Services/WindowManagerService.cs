@@ -17,7 +17,7 @@ namespace Layouter.Services
         private List<DesktopManagerWindow> managedWindows = new List<DesktopManagerWindow>();
 
         private const double WindowMargin = 5;
-        private const double SnapThreshold = 10; // 吸附阈值，当窗口边缘距离其他窗口边缘小于此值时触发吸附
+        private const double SnapThreshold = 10; // 吸附阈值,当窗口边缘距离其他窗口边缘小于此值时触发吸附
         private bool isArrangingWindows = false; // 标记是否正在执行ArrangeWindows操作
 
         private WindowManagerService()
@@ -30,7 +30,7 @@ namespace Layouter.Services
             {
                 managedWindows.Add(window);
 
-                // 初始新窗口位置，确保与其他窗口对齐而不是居中
+                // 初始新窗口位置,确保与其他窗口对齐而不是居中
                 PositionNewWindow(window);
 
                 // 监听窗口位置变化
@@ -77,7 +77,7 @@ namespace Layouter.Services
 
                 foreach (var window in visibleWindows)
                 {
-                    // 如果窗口超出屏幕宽度，则换行
+                    // 如果窗口超出屏幕宽度,则换行
                     if (currentX + window.Width + WindowMargin > workArea.Width)
                     {
                         currentX = WindowMargin;
@@ -134,7 +134,7 @@ namespace Layouter.Services
                     int row = i / numCols;
                     int col = i % numCols;
 
-                    // 计算窗口位置，考虑边距
+                    // 计算窗口位置,考虑边距
                     double left = col * (windowWidth + WindowMargin) + WindowMargin;
                     double top = row * (windowHeight + WindowMargin) + WindowMargin;
 
@@ -162,7 +162,7 @@ namespace Layouter.Services
 
             if (visibleWindows.Count == 0)
             {
-                // 如果没有其他可见窗口，则放在工作区左上角
+                // 如果没有其他可见窗口,则放在工作区左上角
                 newWindow.Left = WindowMargin;
                 newWindow.Top = WindowMargin;
                 return;

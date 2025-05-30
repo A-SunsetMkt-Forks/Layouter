@@ -52,6 +52,11 @@ namespace Layouter.ViewModels
             ToggleLockCommand = new RelayCommand(SwitchLockState);
         }
 
+        public DesktopManagerViewModel(string id) : this()
+        {
+            windowId = id;
+        }
+
         public string windowId { get; set; }
 
         public byte TitleBaseAlpha { get; private set; } = 200;//透明度：200/256
@@ -184,6 +189,8 @@ namespace Layouter.ViewModels
             get => contentBackground;
             set => SetProperty(ref contentBackground, value);
         }
+
+        public bool IsRolledUp { get; set; } = false;
 
         public IRelayCommand ArrangeIconsCommand { get; }
 

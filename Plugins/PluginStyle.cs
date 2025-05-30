@@ -72,6 +72,11 @@ namespace Layouter.Plugins
         /// </summary>
         public double Inteval { get; set; } = 1;
 
+        /// <summary>
+        /// 窗口是否卷起（只显示标题栏）
+        /// </summary>
+        public bool IsRolledUp { get; set; } = false;
+
         public static PluginStyle FromJson(string json)
         {
             var options = new JsonSerializerOptions();

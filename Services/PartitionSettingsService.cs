@@ -71,7 +71,7 @@ namespace Layouter.Services
                 return;
             }
 
-            //如果启用了全局样式，则不保存个性化样式
+            //如果启用了全局样式,则不保存个性化样式
             bool enableGlobalStyle = GeneralSettingsService.Instance.GetEnableGlobalStyle();
             if(enableGlobalStyle)
             {
@@ -96,7 +96,8 @@ namespace Layouter.Services
                     Opacity = viewModel.Opacity,
                     IconSize = viewModel.IconSize,
                     IconTextSize = viewModel.IconTextSize,
-                    IsLocked = viewModel.IsLocked
+                    IsLocked = viewModel.IsLocked,
+                    IsRolledUp = viewModel.IsRolledUp
                 };
 
                 // 保存所有窗口配置
@@ -118,7 +119,7 @@ namespace Layouter.Services
             {
                 if (!File.Exists(globalStyleFilePath))
                 {
-                    // 如果全局配置文件不存在，创建默认配置
+                    // 如果全局配置文件不存在,创建默认配置
                     var defaultSettings = GetDefaultGlobalSettings();
                     SaveGlobalSettings(new DesktopManagerViewModel
                     {
@@ -131,6 +132,7 @@ namespace Layouter.Services
                         IconSize = defaultSettings.IconSize,
                         IconTextSize = defaultSettings.IconTextSize,
                         IsLocked = defaultSettings.IsLocked,
+                        IsRolledUp = false
                     });
 
                     return defaultSettings;
@@ -165,7 +167,7 @@ namespace Layouter.Services
 
                 if (!File.Exists(styleFilePath))
                 {
-                    // 如果个性化配置文件不存在，返回全局配置
+                    // 如果个性化配置文件不存在,返回全局配置
                     return LoadGlobalSettings();
                 }
 
@@ -238,6 +240,7 @@ namespace Layouter.Services
                 viewModel.IconSize = settings.IconSize;
                 viewModel.IconTextSize = settings.IconTextSize;
                 viewModel.IsLocked = settings.IsLocked;
+                viewModel.IsRolledUp = settings.IsRolledUp;
 
                 Log.Information($"已应用样式配置到窗口 {windowId}");
             }

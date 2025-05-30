@@ -30,9 +30,9 @@
 
         <ContextMenu x:Key="IconContextMenu">
             <MenuItem Header="打开" Click="MenuItem_Open"/>
-            <MenuItem Header="删除" Click="MenuItem_Delete"/>
+            <!--<MenuItem Header="删除" Click="MenuItem_Delete"/>
             <Separator />
-            <MenuItem Header="属性" Click="MenuItem_Properties"/>
+            <MenuItem Header="属性" Click="MenuItem_Properties"/>-->
         </ContextMenu>
     </Window.Resources>
 
@@ -45,7 +45,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- 分区标题栏 -->
-                <Border Grid.Row="0" Background="{Binding TitleBackground}" CornerRadius="8,8,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown" >
+                <Border Grid.Row="0" Background="{Binding TitleBackground}" CornerRadius="8,8,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown" MouseLeftButtonUp="TitleBar_MouseLeftButtonUp" >
                     <Grid>
                         <Label Background="Transparent" MouseDoubleClick="DoubleClickHandler" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Focusable="False" Padding="0" Margin="0" />
                         <!-- 标题栏 -->
@@ -84,7 +84,7 @@
                             <!-- 功能按钮区域 -->
                             <StackPanel Orientation="Horizontal" Grid.Column="1">
                                 <!-- 新增分区按钮 -->
-                                <Button Width="30" Height="30" ToolTip="新建分区"  Background="Transparent" BorderThickness="0" Click="NewPartition_Click">
+                                <Button Width="30" Height="30" ToolTip="新建分区"  Background="Transparent" BorderThickness="0" Click="NewPartition_Click" x:Name="NewPartitionButton">
                                     <FluentIcons:SymbolIcon Symbol="Add" FontSize="16" Foreground="{Binding TitleForeground}" />
                                 </Button>
 

@@ -51,6 +51,9 @@ namespace Layouter
             GeneralSettingsService.Instance.InitializeAutoStart();
             // 启动托盘图标
             TrayIconService.Instance.Initialize();
+            
+            // 初始化并加载插件
+            InitializePlugins();
 
             // 尝试恢复上一次的分区配置
             RestorePartitionsFromLastSession();
@@ -169,6 +172,29 @@ namespace Layouter
             }
         }
 
+        private void InitializePlugins()
+        {
+            try
+            {
+                // 使用AppData作为插件目录
+                string pluginsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Env.AppName, "Plugins");
+                Directory.CreateDirectory(pluginsDirectory);
 
+                // 创建插件管理器并加载插件元数据
+                var pluginManager = new Plugins.PluginManager(pluginsDirectory);
+                
+                // 加载插件元数据并自动显示插件窗口
+                pluginManager.LoadPluginsMetadata(true);
+
+                Log.Information($"已加载 {pluginManager.Plugins.Count} 个插件");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"初始化插件失败: {ex.Message}");
+            }
+        }
     }
 }
+
+
+

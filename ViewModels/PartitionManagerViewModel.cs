@@ -279,7 +279,7 @@ namespace Layouter.ViewModels
 
                 if (window == null)
                 {
-                    MessageBox.Show("分区窗口不存在，无法删除。", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("分区窗口不存在,无法删除。", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
@@ -416,7 +416,7 @@ namespace Layouter.ViewModels
 
                     PartitionSettingsService.Instance.SaveSettings(globalViewModel, true);
 
-                    // 如果启用了全局样式，则更新所有窗口
+                    // 如果启用了全局样式,则更新所有窗口
                     if (EnableGlobalStyle)
                     {
                         // 应用全局样式到所有窗口

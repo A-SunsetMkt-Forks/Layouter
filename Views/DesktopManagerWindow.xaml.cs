@@ -38,6 +38,11 @@ namespace Layouter.Views
         private bool isContainerClapsed = false;//图标容器是否折叠
         private double windowHeight = 0;
 
+        // 窗口卷起状态
+        private bool isRolledUp = false;
+        // 标题栏高度
+        private const double TitleBarHeight = 30;
+
         public DesktopManagerWindow()
         {
             InitializeComponent();
@@ -103,6 +108,12 @@ namespace Layouter.Views
             // 设置分区样式
             ApplyStyleSettings();
 
+            //根据配置切换窗口卷起状态
+            if (vm.IsRolledUp)
+            {
+                isRolledUp = true;
+                RollUp();
+            }
         }
 
         private void DesktopManagerWindow_PreviewDragOver(object sender, DragEventArgs e)
@@ -144,23 +155,25 @@ namespace Layouter.Views
             if (clickedElement != null && clickedElement.Tag is DesktopIcon icon)
             {
                 //加载系统右键菜单
-                ShellContextMenu.ShowContextMenuForIcon(icon, e.GetPosition(this), this);
+                bool flag = ShellContextMenu.ShowContextMenuForIcon(icon, e.GetPosition(this), this);
 
                 #region 自定义右键菜单
+                if (!flag)
+                {
+                    var iconCtxMenu = this.TryFindResource("IconContextMenu") as ContextMenu;
 
-                //var iconCtxMenu = this.TryFindResource("IconContextMenu") as ContextMenu;
-
-                //if (iconCtxMenu != null)
-                //{
-                //    iconCtxMenu.Tag = icon; //将图标传递给右键菜单项
-                //    iconCtxMenu.IsOpen = true;
-                //}
+                    if (iconCtxMenu != null)
+                    {
+                        iconCtxMenu.Tag = icon; //将图标传递给右键菜单项
+                        iconCtxMenu.IsOpen = true;
+                    }
+                }
 
                 #endregion
             }
             else
             {
-                // 点击空白区域，不弹出图标右键菜单
+                // 点击空白区域,不弹出图标右键菜单
                 var contextMenu = this.TryFindResource("PartitionContextMenu") as System.Windows.Controls.ContextMenu;
                 if (contextMenu != null)
                 {
@@ -174,7 +187,7 @@ namespace Layouter.Views
             // 保存分区数据
             SavePartitionData();
 
-            // 只隐藏窗口，不关闭应用程序
+            // 只隐藏窗口,不关闭应用程序
             e.Cancel = true;
             this.Hide();
         }
@@ -219,6 +232,11 @@ namespace Layouter.Views
         {
             try
             {
+                // 如果窗口处于卷起状态,保存当前窗口高度
+                if (isRolledUp && windowHeight > this.Height)
+                {
+                    this.Height = windowHeight;
+                }
                 // 使用现有的服务保存分区数据
                 PartitionDataService.Instance.SavePartitionData(this);
 
@@ -252,6 +270,12 @@ namespace Layouter.Views
         {
             isMouseOver = true;
             UpdateWindowOpacity();
+
+            // 如果窗口处于卷起状态,鼠标进入时临时展开
+            if (isRolledUp)
+            {
+                TemporarilyUnroll();
+            }
         }
 
         /// <summary>
@@ -261,6 +285,12 @@ namespace Layouter.Views
         {
             isMouseOver = false;
             UpdateWindowOpacity();
+
+            // 如果窗口处于卷起状态,鼠标离开时恢复卷起
+            if (isRolledUp)
+            {
+                RollUp();
+            }
         }
 
         /// <summary>
@@ -277,12 +307,17 @@ namespace Layouter.Views
                 //AdjustWindowSizeToIconGrid();
             }
 
+            // 如果不是卷起状态,更新保存的窗口高度
+            if (this.Height > TitleBarHeight)
+            {
+                windowHeight = this.Height;
+            }
+
             // 使用延迟重置调整状态
             Task.Delay(500).ContinueWith(_ =>
             {
                 Dispatcher.Invoke(() =>
                 {
-
                     (DataContext as DesktopManagerViewModel)?.ArrangeIcons();
 
                     UpdateWindowOpacity();
@@ -362,7 +397,7 @@ namespace Layouter.Views
         //    double newWidth = columnsCount * gridSize + iconSpacing;
         //    double newHeight = rowsCount * gridSize + TitleBar.ActualHeight + iconSpacing;
 
-        //    // 如果大小有变化，则调整窗口大小
+        //    // 如果大小有变化,则调整窗口大小
         //    if (Math.Abs(this.Width - newWidth) > 1 || Math.Abs(this.Height - newHeight) > 1)
         //    {
         //        isAdjustingSize = true;
@@ -412,8 +447,25 @@ namespace Layouter.Views
 
         private void Settings_Click(object sender, RoutedEventArgs e)
         {
-            // 显示设置下拉菜单
-            SettingsPopup.IsOpen = true;
+            // 创建右键菜单
+            ContextMenu menu = new ContextMenu();
+
+            // 添加窗口设置菜单项
+            MenuItem settingsItem = new MenuItem() { Header = "窗口设置" };
+            settingsItem.Click += (s, args) =>
+            {
+                var settingsWindow = new PartitionSettingsWindow(vm, false);
+                settingsWindow.ShowDialog();
+            };
+            menu.Items.Add(settingsItem);
+
+            // 添加卷起窗口菜单项
+            MenuItem rollUpItem = new MenuItem() { Header = isRolledUp ? "展开窗口" : "卷起窗口" };
+            rollUpItem.Click += (s, args) => ToggleRollUp();
+            menu.Items.Add(rollUpItem);
+
+            // 显示菜单
+            menu.IsOpen = true;
         }
 
         private void NewPartition_Click(object sender, RoutedEventArgs e)
@@ -447,7 +499,7 @@ namespace Layouter.Views
                 settingsWindow.Owner = this;
                 settingsWindow.ShowDialog();
 
-                // 如果设置已保存，更新UI
+                // 如果设置已保存,更新UI
                 if (settingsWindow.DialogResult == true)
                 {
                     // 保存分区数据
@@ -510,14 +562,24 @@ namespace Layouter.Views
             {
                 if (!vm.IsLocked)
                 {
+                    ResizeMode = ResizeMode.NoResize;
                     this.DragMove();
                 }
             }
         }
 
+        private void TitleBar_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (!vm.IsLocked)
+            {
+                ResizeMode = ResizeMode.CanResizeWithGrip;
+            }
+        }
+
         private void DoubleClickHandler(object sender, MouseButtonEventArgs e)
         {
-            SwitchContainerClapsedState();
+            //SwitchContainerClapsedState();
+            ToggleRollUp();
         }
 
         /// <summary>
@@ -527,7 +589,7 @@ namespace Layouter.Views
         {
             if (string.IsNullOrWhiteSpace(TitleTextBlock.Text) || TitleTextBlock.Text == "新分区")
             {
-                // 使用Dispatcher延迟执行，确保UI已完全加载
+                // 使用Dispatcher延迟执行,确保UI已完全加载
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     ShowTitleEditor();
@@ -642,11 +704,11 @@ namespace Layouter.Views
                         // 标记图标正在拖拽
                         draggedIcon.IsDragging = true;
 
-                        // 创建拖拽数据 - 使用文件拖拽格式，这样桌面可以接受
+                        // 创建拖拽数据 - 使用文件拖拽格式,这样桌面可以接受
                         var dataObject = new DataObject();
                         var originalIcon = draggedIcon;
 
-                        // 获取当前位置和窗口句柄，用于判断拖放结果
+                        // 获取当前位置和窗口句柄,用于判断拖放结果
                         Win32.POINT startPt;
                         Win32.GetCursorPos(out startPt);
                         IntPtr startWindowHandle = Win32.WindowFromPoint(startPt);
@@ -655,7 +717,7 @@ namespace Layouter.Views
                         string originalFilePath = draggedIcon.IconPath;
                         bool isShortcut = originalFilePath.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase);
 
-                        // 将图标路径添加为可拖放的文件 - 这是关键，桌面只接受FileDrop格式
+                        // 将图标路径添加为可拖放的文件 - 这是关键,桌面只接受FileDrop格式
                         string[] files = new string[] { draggedIcon.IconPath };
                         dataObject.SetData(DataFormats.FileDrop, files);
 
@@ -669,7 +731,7 @@ namespace Layouter.Views
                         // 开始拖放操作
                         var result = DragDrop.DoDragDrop(this, dataObject, DragDropEffects.Copy | DragDropEffects.Move);
 
-                        // 拖拽结束，获取结束位置
+                        // 拖拽结束,获取结束位置
                         Win32.POINT endPt;
                         Win32.GetCursorPos(out endPt);
                         IntPtr endWindowHandle = Win32.WindowFromPoint(endPt);
@@ -792,7 +854,7 @@ namespace Layouter.Views
 
                     if (files != null && files.Length > 0)
                     {
-                        // 创建一个图标列表，用于存储所有拖放的图标
+                        // 创建一个图标列表,用于存储所有拖放的图标
                         List<DesktopIcon> newIcons = new List<DesktopIcon>();
 
                         // 处理所有拖放的文件
@@ -852,12 +914,12 @@ namespace Layouter.Views
                             // 将图标添加到列表中
                             newIcons.Add(icon);
 
-                            // 稍微偏移下一个图标的位置，避免完全重叠
+                            // 稍微偏移下一个图标的位置,避免完全重叠
                             x += 20;
                             y += 20;
                         }
 
-                        // 如果有图标被添加，则使用第一个图标作为newIcon（用于后续处理）
+                        // 如果有图标被添加,则使用第一个图标作为newIcon（用于后续处理）
                         if (newIcons.Count > 0)
                         {
                             newIcon = newIcons[0];
@@ -880,7 +942,7 @@ namespace Layouter.Views
 
                         if (shellItems != null && shellItems.Count > 0)
                         {
-                            // 创建一个图标列表，用于存储所有拖放的Shell项目
+                            // 创建一个图标列表,用于存储所有拖放的Shell项目
                             List<DesktopIcon> shellIcons = new List<DesktopIcon>();
 
                             // 处理所有拖放的Shell项目
@@ -895,13 +957,13 @@ namespace Layouter.Views
                                     shellIcons.Add(icon);
                                     viewModel?.AddIcon(icon);
 
-                                    // 稍微偏移下一个图标的位置，避免完全重叠
+                                    // 稍微偏移下一个图标的位置,避免完全重叠
                                     dropPoint.X += 20;
                                     dropPoint.Y += 20;
                                 }
                             }
 
-                            // 如果有图标被添加，则使用第一个图标作为newIcon（用于后续处理）
+                            // 如果有图标被添加,则使用第一个图标作为newIcon（用于后续处理）
                             if (shellIcons.Count > 0)
                             {
                                 newIcon = shellIcons[0];
@@ -910,15 +972,15 @@ namespace Layouter.Views
                     }
                 }
 
-                // 如果成功创建了新图标，保存分区数据
+                // 如果成功创建了新图标,保存分区数据
                 if (newIcon != null)
                 {
-                    // 注意：图标已经在前面的代码中添加到视图模型中，这里不需要再次添加
+                    // 注意：图标已经在前面的代码中添加到视图模型中,这里不需要再次添加
 
                     // 保存分区数据
                     SavePartitionData();
 
-                    // 如果是从桌面拖过来的文件，则隐藏桌面上的原图标
+                    // 如果是从桌面拖过来的文件,则隐藏桌面上的原图标
                     if (!flag && data.GetDataPresent(DataFormats.FileDrop))
                     {
                         var files = data.GetData(DataFormats.FileDrop) as string[];
@@ -941,7 +1003,7 @@ namespace Layouter.Views
 
                                 if (!hidden)
                                 {
-                                    Log.Information($"警告：无法隐藏桌面上的图标，但仍会将其添加到分区：{desktopPath}");
+                                    Log.Information($"警告：无法隐藏桌面上的图标,但仍会将其添加到分区：{desktopPath}");
                                 }
                                 else
                                 {
@@ -958,7 +1020,7 @@ namespace Layouter.Views
                         DesktopIconService.Instance.HideDesktopIcon(filePath);
                     }
 
-                    // 延迟执行排列，确保新图标已经加入集合
+                    // 延迟执行排列,确保新图标已经加入集合
                     Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                     {
                         viewModel?.ArrangeIcons();
@@ -1028,7 +1090,7 @@ namespace Layouter.Views
         {
             if (isDragging)
             {
-                // 如果正在拖动，则不处理双击
+                // 如果正在拖动,则不处理双击
                 return;
             }
 
@@ -1040,17 +1102,17 @@ namespace Layouter.Views
                 // 判断是否是双击（同一个图标在短时间内点击两次）
                 if (lastClickedIcon == icon && (now - lastClickTime).TotalMilliseconds < DoubleClickTimeThreshold)
                 {
-                    // 双击，打开文件
+                    // 双击,打开文件
                     OpenFileOrProgram(icon.IconPath);
                     e.Handled = true;
 
-                    // 重置状态，防止连续多次打开
+                    // 重置状态,防止连续多次打开
                     lastClickTime = DateTime.MinValue;
                     lastClickedIcon = null;
                 }
                 else
                 {
-                    // 单击，更新状态
+                    // 单击,更新状态
                     lastClickTime = now;
                     lastClickedIcon = icon;
                 }
@@ -1061,7 +1123,7 @@ namespace Layouter.Views
         {
             try
             {
-                // 获取菜单项的Tag，即对应的DesktopIcon对象
+                // 获取菜单项的Tag,即对应的DesktopIcon对象
                 var menuItem = sender as MenuItem;
                 var contextMenu = menuItem?.Parent as System.Windows.Controls.ContextMenu;
 
@@ -1082,7 +1144,7 @@ namespace Layouter.Views
         {
             try
             {
-                // 获取菜单项的Tag，即对应的DesktopIcon对象
+                // 获取菜单项的Tag,即对应的DesktopIcon对象
                 var menuItem = sender as MenuItem;
                 var contextMenu = menuItem?.Parent as System.Windows.Controls.ContextMenu;
 
@@ -1104,7 +1166,7 @@ namespace Layouter.Views
 
                         if (!restored)
                         {
-                            Log.Information($"警告：无法恢复桌面上的图标，但仍会从分区中移除：{icon.IconPath}");
+                            Log.Information($"警告：无法恢复桌面上的图标,但仍会从分区中移除：{icon.IconPath}");
                         }
 
                         // 从分区移除图标
@@ -1126,7 +1188,7 @@ namespace Layouter.Views
         {
             try
             {
-                // 获取菜单项的Tag，即对应的DesktopIcon对象
+                // 获取菜单项的Tag,即对应的DesktopIcon对象
                 var menuItem = sender as MenuItem;
                 var contextMenu = menuItem?.Parent as System.Windows.Controls.ContextMenu;
 
@@ -1154,6 +1216,10 @@ namespace Layouter.Views
                 }
                 else if (!ShortCutUtil.IsShortcutPath(path))
                 {
+                    if (path.StartsWith("::") && !path.StartsWith(":::"))
+                    {
+                        path = $"shell:{path}";
+                    }
                     ShellUtil.OpenSpecialFolder(path);
                 }
             }
@@ -1185,6 +1251,118 @@ namespace Layouter.Views
                 Log.Information($"应用样式配置时出错: {ex.Message}");
             }
         }
+
+        #region 窗口卷起功能
+
+        private void ToggleRollUp()
+        {
+            isRolledUp = !isRolledUp;
+
+            if (isRolledUp)
+            {
+                RollUp();
+            }
+            else
+            {
+                Unroll();
+            }
+
+            // 保存设置
+            //SavePartitionData();
+        }
+
+        /// <summary>
+        /// 卷起窗口
+        /// </summary>
+        private void RollUp()
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                IconsContainer.Visibility = Visibility.Collapsed;
+                this.Height = TitleBar.Height;
+                isContainerClapsed = true;
+
+                // 隐藏功能按钮
+                if (NewPartitionButton != null)
+                {
+                    NewPartitionButton.Visibility = Visibility.Collapsed;
+                }
+                if (SettingsButton != null)
+                {
+                    SettingsButton.Visibility = Visibility.Collapsed;
+                }
+                if (LockButton != null)
+                {
+                    LockButton.Visibility = Visibility.Collapsed;
+                }
+
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
+
+            vm.IsRolledUp = true;
+        }
+
+        /// <summary>
+        /// 展开窗口
+        /// </summary>
+        private void Unroll()
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                IconsContainer.Visibility = Visibility.Visible;
+                this.Height = windowHeight;
+                isContainerClapsed = false;
+
+                // 显示功能按钮
+                if (NewPartitionButton != null)
+                {
+                    NewPartitionButton.Visibility = Visibility.Visible;
+                }
+                if (SettingsButton != null)
+                {
+                    SettingsButton.Visibility = Visibility.Visible;
+                }
+                if (LockButton != null)
+                {
+                    LockButton.Visibility = Visibility.Visible;
+                }
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
+
+            vm.IsRolledUp = false;
+        }
+
+        /// <summary>
+        /// 临时展开窗口
+        /// </summary>
+        private void TemporarilyUnroll()
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                IconsContainer.Visibility = Visibility.Visible;
+                this.Height = windowHeight;
+                isContainerClapsed = false;
+
+                // 显示功能按钮
+                if (NewPartitionButton != null)
+                {
+                    NewPartitionButton.Visibility = Visibility.Visible;
+                }
+                if (SettingsButton != null)
+                {
+                    SettingsButton.Visibility = Visibility.Visible;
+                }
+                if (LockButton != null)
+                {
+                    LockButton.Visibility = Visibility.Visible;
+                }
+
+                // 恢复窗口原始高度
+                this.Height = windowHeight;
+
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
+
+        }
+
+        #endregion
 
         /// <summary>
         /// 更新图标大小

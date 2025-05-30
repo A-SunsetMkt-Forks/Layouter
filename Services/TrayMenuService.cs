@@ -147,12 +147,12 @@ namespace Layouter.Services
             menuItems["Plugins"] = pluginsMenuItem;
 
             // 插件管理菜单项
-            var pluginManagerItem = CreateMenuItem("插件管理");
+            var pluginManagerItem = CreateMenuItem("插件管理", IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.PlugConnectedSettings, Colors.DodgerBlue));
             pluginManagerItem.Click += (s, e) => ShowPluginManager();
             pluginsMenuItem.Items.Add(pluginManagerItem);
 
             // 创建插件菜单项
-            var createPluginItem = CreateMenuItem("创建插件");
+            var createPluginItem = CreateMenuItem("创建插件", IconUtil.CreateMenuItemIcon(FluentIcons.Common.Symbol.PlugConnectedAdd, Colors.DodgerBlue));
             createPluginItem.Click += (s, e) => CreateNewPlugin();
             pluginsMenuItem.Items.Add(createPluginItem);
 
