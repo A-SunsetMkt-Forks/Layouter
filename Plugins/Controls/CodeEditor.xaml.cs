@@ -739,8 +739,6 @@ namespace Layouter.Plugins.Controls
                 currentFilePath = "style.json";
                 aeEditor.Text = fileContents["style.json"];
                 aeEditor.SyntaxHighlighting = ICSharpCode.AvalonEdit.Highlighting.HighlightingManager.Instance.GetDefinition("JavaScript");
-
-                MessageBox.Show("样式文件已添加", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
