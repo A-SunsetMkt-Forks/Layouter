@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window x:Class="Layouter.Plugins.Views.FloatingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:FluentIcons="clr-namespace:FluentIcons.Wpf;assembly=FluentIcons.Wpf"
+        mc:Ignorable="d"
+        Title="悬浮窗口"
+        Width="60" Height="60"
+        WindowStartupLocation="Manual"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        Background="Transparent"
+        BorderThickness="0"
+        ResizeMode="NoResize"
+        MouseEnter="Window_MouseEnter"
+        MouseLeave="Window_MouseLeave"
+        ShowInTaskbar="False"
+        Topmost="True">
+
+    <Window.Resources>
+        <!-- 渐变动画 -->
+        <Storyboard x:Key="GradientAnimation" RepeatBehavior="Forever">
+            <DoubleAnimation 
+                Storyboard.TargetName="GradientStop1" 
+                Storyboard.TargetProperty="Offset"
+                From="0" To="1" Duration="0:0:5" 
+                AutoReverse="True" />
+            <DoubleAnimation 
+                Storyboard.TargetName="GradientStop2" 
+                Storyboard.TargetProperty="Offset"
+                From="1" To="0" Duration="0:0:5" 
+                AutoReverse="True" />
+        </Storyboard>
+    </Window.Resources>
+
+    <Grid>
+        <!-- 主容器 -->
+        <Border x:Name="MainBorder" 
+                CornerRadius="30" 
+                MouseLeftButtonDown="MainBorder_MouseLeftButtonDown"
+                MouseRightButtonDown="MainBorder_MouseRightButtonDown">
+            <Border.Background>
+                <LinearGradientBrush x:Name="GradientBrush" StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop x:Name="GradientStop1" Color="#3F51B5" Offset="0" />
+                    <GradientStop x:Name="GradientStop2" Color="#00BCD4" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+            
+            <!-- 内容区域 -->
+            <Grid>
+                <!-- 图标 -->
+                <Image x:Name="IconImage" 
+                       Width="30" Height="30" 
+                       Visibility="Visible"
+                       RenderOptions.BitmapScalingMode="HighQuality" />
+                
+                <!-- 悬停时显示的菜单图标 -->
+                <StackPanel x:Name="HoverMenu" 
+                          Orientation="Horizontal" 
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Center"
+                          Visibility="Collapsed">
+                    <!-- 菜单项将在代码中动态添加 -->
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
