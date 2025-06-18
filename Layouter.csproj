@@ -18,9 +18,13 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Remove="Plugins\SysCheckPlugin\**" />
 		<Compile Remove="Resources\Images\**" />
+		<EmbeddedResource Remove="Plugins\SysCheckPlugin\**" />
 		<EmbeddedResource Remove="Resources\Images\**" />
+		<None Remove="Plugins\SysCheckPlugin\**" />
 		<None Remove="Resources\Images\**" />
+		<Page Remove="Plugins\SysCheckPlugin\**" />
 		<Page Remove="Resources\Images\**" />
 	</ItemGroup>
 
@@ -28,11 +32,6 @@
 		<Compile Remove="MainWindow.xaml.cs" />
 		<Compile Remove="Models\Configuration.cs" />
 		<Compile Remove="Plugins\PluginDemoWindow.xaml.cs" />
-		<Compile Remove="Plugins\PluginLoader.cs" />
-		<Compile Remove="Plugins\PluginManager.cs" />
-		<Compile Remove="Plugins\PluginSecurityChecker.cs" />
-		<Compile Remove="Plugins\PluginSettingsService.cs" />
-		<Compile Remove="Plugins\PluginsManagerWindow.xaml.cs" />
 		<Compile Remove="Plugins\TemplateManager.cs" />
 		<Compile Remove="Services\ConfigurationService.cs" />
 		<Compile Remove="Services\DataService.cs" />
@@ -47,7 +46,6 @@
 	<ItemGroup>
 		<Page Remove="MainWindow.xaml" />
 		<Page Remove="Plugins\PluginDemoWindow.xaml" />
-		<Page Remove="Plugins\PluginsManagerWindow.xaml" />
 		<Page Remove="Views\AddPartitionWindow.xaml" />
 		<Page Remove="Views\DesktopManagerView.xaml" />
 		<Page Remove="Views\Feature1Window.xaml" />
@@ -58,9 +56,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="AvalonEdit" Version="6.3.1.120" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
 		<PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
 		<PackageReference Include="Material.Icons.WPF" Version="2.3.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
@@ -69,6 +69,10 @@
 		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
 		<PackageReference Include="System.IO.Compression" Version="4.3.0" />
 		<PackageReference Include="System.Management" Version="8.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\PluginEntry\PluginEntry.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
