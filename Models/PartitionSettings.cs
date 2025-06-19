@@ -20,6 +20,7 @@ namespace Layouter.Models
         public IconSize IconSize { get; set; }
         public double IconTextSize { get; set; } = 12d;
         public bool IsLocked { get; set; } = false;
+        public bool IsRolledUp { get; set; } = false;
     }
 
     public class GlobalPartitionSettings : PartitionSettings
