@@ -77,6 +77,8 @@ namespace Layouter.Plugins
         /// </summary>
         public bool IsRolledUp { get; set; } = false;
 
+        public ShapeType ShapeType { get; set; } = ShapeType.Round; // FloatingWindow适用
+
         public static PluginStyle FromJson(string json)
         {
             var options = new JsonSerializerOptions();
@@ -84,6 +86,13 @@ namespace Layouter.Plugins
 
             return JsonSerializer.Deserialize<PluginStyle>(json, options);
         }
+    }
+
+    public enum ShapeType
+    {
+        Notset = -1,
+        Round,
+        Rectangle
     }
 
     /// <summary>
