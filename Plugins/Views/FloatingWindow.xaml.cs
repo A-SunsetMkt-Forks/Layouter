@@ -189,8 +189,10 @@ namespace Layouter.Plugins.Views
 
         private void ApplyStyle()
         {
-            if (style == null) return;
-
+            if (style == null)
+            {
+                return;
+            }
             // 应用窗口位置和大小
             Width = style.WindowPosition.Width;
             Height = style.WindowPosition.Height;
@@ -219,8 +221,8 @@ namespace Layouter.Plugins.Views
                 }
             }
 
-            // 设置形状（圆形或方形）
-            isCircleShape = (Width == Height); // 如果宽高相等，则为圆形
+            // 设置形状
+            isCircleShape = style.ShapeType == ShapeType.Round;
             MainBorder.CornerRadius = isCircleShape ? new CornerRadius(Width / 2) : new CornerRadius(8);
         }
 
