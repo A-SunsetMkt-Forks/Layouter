@@ -19,6 +19,14 @@ namespace Layouter.Utility
             return hwnd;
         }
 
+        public static void SetDesktopLevelWindow(Window win)
+        {
+            IntPtr hwnd = GetWindowHandle(win);
+
+            DesktopUtil.SetShellViewAsOwnerWindow(hwnd);
+            DesktopUtil.SetAsToolWindow(hwnd);
+        }
+
         public static bool IsWindows11()
         {
             bool? flag = null;
