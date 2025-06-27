@@ -95,12 +95,7 @@ namespace Layouter.Views
 
         private void DesktopManagerWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            IntPtr hwnd = SysUtil.GetWindowHandle(this);
-
-            //DesktopUtil.SetAsDesktopLevelWindow(hwnd);
-            DesktopUtil.SetShellViewAsOwnerWindow(hwnd); //worked!
-
-            DesktopUtil.SetAsToolWindow(hwnd);
+            SysUtil.SetDesktopLevelWindow(this);
 
             // 加载分区数据
             LoadPartitionData();
